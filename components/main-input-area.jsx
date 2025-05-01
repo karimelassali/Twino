@@ -4,6 +4,7 @@ import { useState } from "react";
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
 import { FaUser } from "react-icons/fa";
 import { useRouter } from "next/navigation";
+import {setCookie} from "cookies-next";
 
 export default function MainInputArea() {
     const router = useRouter();
@@ -42,6 +43,7 @@ export default function MainInputArea() {
   const onSubmit = (e) => {
     e.preventDefault();
     console.log("Submitted - Subject:", subject, "Characters:", selectedCharacters);
+    setCookie("subject", subject);
     router.push(`/chat/${crypto.randomUUID()}`);
   };
 
@@ -54,23 +56,7 @@ export default function MainInputArea() {
       />
 
       {/* قسم اختيار الشخصيات باستخدام Dropdown */}
-      <div className="mt-4 w-full max-w-md">
-        <label className="flex items-center gap-2 text-darkGray dark:text-lightGray mb-2">
-          <FaUser className="text-sky" />
-          Choose Bot Personalities:
-        </label>
-        <select
-          value={selectedCharacters}
-          onChange={handleCharacterSelect}
-          className="w-full p-3 rounded-lg border border-darkGray focus:outline-none focus:ring-2 focus:ring-sky text-navy dark:bg-gray-800 dark:text-lightGray dark:border-gray-600"
-        >
-          {characterOptions.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      </div>
+      
     </div>
   );
 }
