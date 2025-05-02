@@ -11,7 +11,7 @@ export default function Navbar() {
         height={48}
         className="rounded-full"
       />
-      <span className="text-xl font-semibold text-gray-800 hidden sm:inline">Twino</span>
+      <span className="text-xl font-black text-gray-800 tracking-tight hidden sm:inline">Tw<span className="font-extrabold">i</span>no</span>
     </a>
   
     {/* Navigation Buttons */}

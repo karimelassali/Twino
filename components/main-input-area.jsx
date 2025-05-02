@@ -5,9 +5,11 @@ import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-van
 import { FaUser } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import {setCookie} from "cookies-next";
+import {createClient} from "@/utils/supabase/client";
 
 export default function MainInputArea() {
-    const router = useRouter();
+  const supabase = createClient();
+  const router = useRouter();
   const placeholders = [
     "What's the first rule of Fight Club?",
     "Who is Tyler Durden?",
@@ -40,11 +42,24 @@ export default function MainInputArea() {
   };
 
   // التعامل مع الإرسال
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     console.log("Submitted - Subject:", subject, "Characters:", selectedCharacters);
-    setCookie("subject", subject);
-    router.push(`/chat/${crypto.randomUUID()}`);
+    try {
+      setCookie("subject", subject);
+      const { data, error } = await supabase.from('conversations').insert({
+        user_id: crypto.randomUUID(),
+        subject: subject,
+        personality_pair_id: '3a696b8c-870e-4c7b-9a78-fde8adec0c15',
+      })
+      .single()
+      .select();
+      if (error) throw error;
+      console.log("Conversation created:", data);
+      router.push(`/chat/${data.id}`);
+    } catch (error) {
+      console.error("Error submitting message:", error);
+    }
   };
 
   return (

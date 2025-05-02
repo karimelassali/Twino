@@ -4,7 +4,10 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, RefreshCw, Moon, Sun, Sparkles } from "lucide-react";
 import {createClient} from "@/utils/supabase/client";
-
+import { useRouter } from "next/navigation";
+import React from "react";
+import axios from "axios";
+import Typing from "@/components/ui/typing";
 // Your original Twino logo SVG (simplified for example)
 const TwinoLogo = () => (
   <svg width="40" height="40" viewBox="0 0 100 100" fill="none">
@@ -98,7 +101,9 @@ function getInitials(name) {
     .toUpperCase();
 }
 
-export default function TwinoChat() {
+export default function TwinoChat({ params }) {
+  const { uid } = React.use(params);
+  const router = useRouter();
   const supabase = createClient();
 
   const colors = {
@@ -131,13 +136,35 @@ export default function TwinoChat() {
     },
   };
 
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
   const [conversation, setConversation] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [selectedPersonality, setSelectedPersonality] = useState(botPersonalities[0]);
-  const [selectedTopic, setSelectedTopic] = useState(topicOptions[0]);
+  const [selectedTopic, setSelectedTopic] = useState('');
   const [showTopicSelect, setShowTopicSelect] = useState(false);
   const chatContainerRef = useRef(null);
+  const [mockReadingFinished, setMockReadingFinished] = useState(false);
+
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState('');
+  const [askerStatus, setAskerStatus] = useState(false);
+  const [responderStatus, setResponderStatus] = useState(true);
+
+
+  const [data,setData] = useState([]);
+
+  useEffect(()=>{
+    supabase.from('conversations').select(
+      'id, subject, personalities (personality_pair)'
+    ).eq('id', uid).single().then(({data})=>{
+      setData(data);
+      setSelectedTopic(data.subject);
+      setSelectedPersonality(data.personalities.personality_pair);
+    }).catch((err)=>{
+      console.log(err);
+    })
+  },[uid])
+
 
   useEffect(() => {
     setIsTyping(true);
@@ -183,6 +210,48 @@ export default function TwinoChat() {
 
   const theme = darkMode ? colors.darkMode : colors.lightMode;
 
+  const asker = async () => {
+   if(data.subject && data.personalities.personality_pair){
+    const sendQuestion = await axios.post("/api/asker", {
+      subject: data.subject,
+      personalityPair: data.personalities.personality_pair.split(" × ")[0],
+      previousMessages: conversation,
+    });
+    const response = sendQuestion.data;
+    response && setAskerStatus(true);
+    setQuestion(response.message);
+    setResponderStatus(false);
+   }
+   
+  }
+
+  useEffect(() => {
+    setTimeout(() => {
+    asker();
+    }, 1000);
+  }, [data]);
+
+
+  const mockReadingText = [
+    "Hmm, reading this...",
+    "That's interesting...",
+    "Oh, I knew it!",
+    "Let me think about this...",
+    "I see what you mean...",
+    "Interesting point...",
+    "Wait, really?",
+    "That makes sense...",
+    "I've never thought about it that way...",
+    "Let me process this..."
+  ];
+
+  useEffect(() => {
+    setTimeout(() => {
+      setMockReadingFinished(true);
+    }, 5000);
+  }, [mockReadingFinished]);
+
+  
   return (
     <div
       className="flex flex-col h-screen font-sans"
@@ -204,6 +273,7 @@ export default function TwinoChat() {
         <div className="container mx-auto flex justify-between items-center gap-4">
           <div className="flex items-center gap-3">
             <motion.button
+              onClick={() => router.push("/")}
               whileHover={{ scale: 1.05, backgroundColor: theme.buttonHoverBg }}
               whileTap={{ scale: 0.95 }}
               aria-label="Back"
@@ -216,17 +286,27 @@ export default function TwinoChat() {
             </motion.button>
             <div className="flex items-center gap-2 select-none">
               <TwinoLogo />
-              <h1
-                className="text-2xl font-bold"
-                style={{
-                  background: `linear-gradient(90deg, ${colors.lightBlue} 0%, ${colors.midBlue} 50%, ${colors.purple} 100%)`,
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  userSelect: "none",
-                }}
-              >
-                TWINO
-              </h1>
+              <div className="flex flex-col  sm:flex-row sm:items-start">
+                <h1
+                  className="text-2xl font-bold"
+                  style={{
+                    background: `linear-gradient(90deg, ${colors.lightBlue} 0%, ${colors.midBlue} 50%, ${colors.purple} 100%)`,
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    userSelect: "none",
+                  }}
+                >
+                  TWINO
+                </h1>
+                <motion.span
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="text-xs text-slate-500 font-medium tracking-wider uppercase opacity-80"
+                >
+                  Two minds, one topic.
+                </motion.span>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -258,7 +338,7 @@ export default function TwinoChat() {
               }}
               type="button"
             >
-              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+              {darkMode ? <Moon size={18} /> : <Sun size={18} />}
             </motion.button>
           </div>
         </div>
@@ -285,7 +365,7 @@ export default function TwinoChat() {
               type="button"
             >
               <Sparkles size={14} style={{ color: colors.lightBlue }} />
-              Topic: {selectedTopic.name}
+              Topic: {selectedTopic}
             </button>
             <AnimatePresence>
               {showTopicSelect && (
@@ -331,40 +411,69 @@ export default function TwinoChat() {
               style={{ color: theme.text }}
               aria-label="Selected bot personalities"
             >
-              Personalities: {selectedPersonality.pair}
+              {data.personalities && (
+                <span>
+                  Personalities: {data.personalities.personality_pair}
+                </span>
+              )}
             </span>
-            <select
-              value={selectedPersonality.id}
-              onChange={(e) => {
-                const newPersonality = botPersonalities.find(
-                  (p) => p.id === Number(e.target.value)
-                );
-                setSelectedPersonality(newPersonality);
-                resetConversation();
-              }}
-              className="rounded-md border px-3 py-1 text-sm transition-colors duration-300"
-              style={{
-                borderColor: theme.border,
-                backgroundColor: theme.surface,
-                color: theme.text,
-              }}
-              aria-label="Select bot personality"
-            >
-              {botPersonalities.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.pair}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
       </nav>
 
       {/* Chat Area */}
-      
+      {data.length > 0 && data.map((message) => (
+        <p key={message.id}>{message.sender}: {message.message}{message.message}</p>
+      ))}
+     
+      <div className="w-full p-3 flex justify-end">
+        {!askerStatus && (
+          data.personalities && (
+            <Typing typer={data.personalities.personality_pair.split(" × ")[0]} />
+
+        )
+        )}
+        {question && (
+          <div className="mt-4 max-w-[50%] border rounded-tl-md rounded-tr-md rounded-bl-md p-3" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
+            <p className="text-sm">{question.message}</p>
+          </div>
+        )}
+      </div>
+      <div className="w-full p-3 flex justify-start">
+        {!responderStatus && (
+          <>
+            {!mockReadingFinished && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+                className="text-sm text-gray-600 italic mb-2"
+              >
+                {mockReadingText[Math.floor(Date.now() / 1500) % mockReadingText.length]}
+              </motion.div>
+            )}
+           
+            {mockReadingFinished && data.personalities && (
+              <Typing typer={data.personalities.personality_pair.split(" × ")[1]} />
+            )}
+          </>
+        )}
+        
+        {answer && (
+          <div 
+            className="mt-4 max-w-[50%] border rounded-tl-md rounded-tr-md rounded-bl-md p-3" 
+            style={{ backgroundColor: theme.surface, borderColor: theme.border }}
+            
+          >
+            <p className="text-sm">{answer.message}</p>
+          </div>
+        )}
+      </div>
+
       {/* Input Area (Demo, disabled) */}
       <footer
-        className="border-t py-3 px-4"
+        className="border-t absolute bottom-0 w-full py-3 px-4"
         style={{ backgroundColor: theme.surface, borderColor: theme.border }}
       >
         <form
