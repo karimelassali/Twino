@@ -450,7 +450,7 @@ export default function TwinoChat({ params }) {
                 transition={{ duration: 0.5, ease: "easeInOut" }}
                 className="text-sm text-gray-600 italic mb-2"
               >
-                {mockReadingText[Math.floor(Date.now() / 1500) % mockReadingText.length]}
+                {mockReadingText[Math.floor(Date.now() / 1000) % mockReadingText.length]}
               </motion.div>
             )}
            
