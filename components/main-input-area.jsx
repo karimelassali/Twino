@@ -50,7 +50,7 @@ export default function MainInputArea() {
       const { data, error } = await supabase.from('conversations').insert({
         user_id: crypto.randomUUID(),
         subject: subject,
-        personality_pair_id: '3a696b8c-870e-4c7b-9a78-fde8adec0c15',
+        personality_pair_id: '973783bb-8e80-401a-aa19-81f7a8cd0776',
       })
       .single()
       .select();

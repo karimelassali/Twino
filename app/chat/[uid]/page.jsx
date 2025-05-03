@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, RefreshCw, Moon, Sun, Sparkles } from "lucide-react";
-import {createClient} from "@/utils/supabase/client";
+import { ArrowLeft, RefreshCw, Moon, Sun, Sparkles, Pause, Play } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import React from "react";
 import axios from "axios";
 import Typing from "@/components/ui/typing";
-// Your original Twino logo SVG (simplified for example)
+
+// Twino logo SVG
 const TwinoLogo = () => (
   <svg width="40" height="40" viewBox="0 0 100 100" fill="none">
     <g>
@@ -34,63 +35,11 @@ const TwinoLogo = () => (
   </svg>
 );
 
-const initialConversation = [
-  {
-    id: 1,
-    sender: "Bot1",
-    message:
-      "The causes of World War I were complex and multifaceted. One of the primary factors was the system of alliances that had developed across Europe by 1914.",
-    timestamp: "2:30 PM",
-  },
-  {
-    id: 2,
-    sender: "Bot2",
-    message:
-      "I've heard about these alliances before. Could you explain how they actually contributed to starting the war?",
-    timestamp: "2:31 PM",
-  },
-  {
-    id: 3,
-    sender: "Bot1",
-    message:
-      "Certainly! The alliance system created a sort of 'domino effect.' When Austria-Hungary declared war on Serbia after the assassination of Archduke Franz Ferdinand, Russia mobilized to defend Serbia.",
-    timestamp: "2:33 PM",
-  },
-  {
-    id: 4,
-    sender: "Bot2",
-    message:
-      "And that triggered other countries to get involved based on their alliances?",
-    timestamp: "2:34 PM",
-  },
-  {
-    id: 5,
-    sender: "Bot1",
-    message:
-      "Exactly! Germany, allied with Austria-Hungary, declared war on Russia and then on France (Russia's ally). When German forces invaded Belgium to attack France, Britain entered the war to defend Belgian neutrality.",
-    timestamp: "2:36 PM",
-  },
-  {
-    id: 6,
-    sender: "Bot2",
-    message:
-      "Wow, that really shows how interconnected everything was. Were there other important factors besides alliances?",
-    timestamp: "2:37 PM",
-  },
-];
-
 const botPersonalities = [
   { id: 1, pair: "Historian × Student" },
   { id: 2, pair: "Professor × Novice" },
   { id: 3, pair: "Expert × Curious Mind" },
   { id: 4, pair: "Mentor × Apprentice" },
-];
-
-const topicOptions = [
-  { id: 1, name: "WW1 causes" },
-  { id: 2, name: "Climate change" },
-  { id: 3, name: "Space exploration" },
-  { id: 4, name: "Quantum physics" },
 ];
 
 function getInitials(name) {
@@ -117,120 +66,176 @@ export default function TwinoChat({ params }) {
       surface: "#002952",
       text: "#E1F5FE",
       bubbleBotBg: "#0A2A4D",
+      responderBubbleBg: "#1B365D", // Different color for responder
       bubbleUserBg: "#1B365D",
       buttonBg: "#144E8C",
       buttonHoverBg: "#1F6EC0",
       border: "#144E8C",
       subText: "#A3C4F3",
+      accent: "#3DB7E4",
     },
     lightMode: {
       bg: "#F7FAFC",
       surface: "#FFFFFF",
       text: "#1E293B",
       bubbleBotBg: "#E3E8F1",
-      bubbleUserBg: "#D1D9F6",
+      responderBubbleBg: "#D1D9F6", // Different color for responder
+      bubbleUserBg: "#3DB7E4", // Changed color for user bubble in light mode
       buttonBg: "#3DB7E4",
       buttonHoverBg: "#5AB0F9",
       border: "#CBD5E1",
       subText: "#64748B",
+      accent: "#4A7AFF",
     },
   };
 
   const [darkMode, setDarkMode] = useState(false);
   const [conversation, setConversation] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
-  const [selectedPersonality, setSelectedPersonality] = useState(botPersonalities[0]);
-  const [selectedTopic, setSelectedTopic] = useState('');
+  const [selectedPersonality, setSelectedPersonality] = useState(botPersonalities[0].pair);
+  const [selectedTopic, setSelectedTopic] = useState("");
   const [showTopicSelect, setShowTopicSelect] = useState(false);
   const chatContainerRef = useRef(null);
-  const [mockReadingFinished, setMockReadingFinished] = useState(false);
-
-  const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState('');
-  const [askerStatus, setAskerStatus] = useState(false);
-  const [responderStatus, setResponderStatus] = useState(true);
-
-
-  const [data,setData] = useState([]);
-
-  useEffect(()=>{
-    supabase.from('conversations').select(
-      'id, subject, personalities (personality_pair)'
-    ).eq('id', uid).single().then(({data})=>{
-      setData(data);
-      setSelectedTopic(data.subject);
-      setSelectedPersonality(data.personalities.personality_pair);
-    }).catch((err)=>{
-      console.log(err);
-    })
-  },[uid])
-
+  const [mockReading, setMockReading] = useState(false);
+  const [data, setData] = useState(null);
+  const [isConversationActive, setIsConversationActive] = useState(true);
+  const [stop, setStop] = useState(false);
 
   useEffect(() => {
-    setIsTyping(true);
-    setConversation([]);
-    let currentIndex = 0;
-    const timer = setInterval(() => {
-      if (currentIndex < initialConversation.length) {
-        setConversation((prev) => [...prev, initialConversation[currentIndex]]);
-        currentIndex++;
-      } else {
-        clearInterval(timer);
-        setIsTyping(false);
-      }
-    }, 900);
-    return () => clearInterval(timer);
-  }, [selectedTopic, selectedPersonality]);
+    supabase
+      .from("conversations")
+      .select("id, subject, personalities (personality_pair)")
+      .eq("id", uid)
+      .single()
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Supabase error:", error);
+          return;
+        }
+        setData(data);
+        setSelectedTopic(data.subject);
+        setSelectedPersonality(data.personalities.personality_pair);
+      });
+  }, [uid]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [conversation, isTyping]);
+  }, [conversation, isTyping, mockReading]);
 
   const resetConversation = () => {
     setConversation([]);
-    setIsTyping(true);
-    let currentIndex = 0;
-    const timer = setInterval(() => {
-      if (currentIndex < initialConversation.length) {
-        setConversation((prev) => [...prev, initialConversation[currentIndex]]);
-        currentIndex++;
-      } else {
-        clearInterval(timer);
-        setIsTyping(false);
-      }
-    }, 700);
-  };
-
-  const getBotPersonality = (sender) => {
-    const personalities = selectedPersonality.pair.split(" × ");
-    return sender === "Bot1" ? personalities[0] : personalities[1];
+    setIsConversationActive(true);
+    setStop(false);
+    startConversation();
   };
 
   const theme = darkMode ? colors.darkMode : colors.lightMode;
 
-  const asker = async () => {
-   if(data.subject && data.personalities.personality_pair){
-    const sendQuestion = await axios.post("/api/asker", {
-      subject: data.subject,
-      personalityPair: data.personalities.personality_pair.split(" × ")[0],
-      previousMessages: conversation,
-    });
-    const response = sendQuestion.data;
-    response && setAskerStatus(true);
-    setQuestion(response.message);
-    setResponderStatus(false);
-   }
-   
-  }
+  const asker = async (previousMessages) => {
+    if (!data?.subject || !data?.personalities?.personality_pair || stop) return;
+    setIsTyping(true);
+    try {
+      const response = await axios.post("/api/asker", {
+        subject: data.subject,
+        personalityPair: data.personalities.personality_pair.split(" × ")[0],
+        previousMessages,
+      });
+      const message = response.data.message;
+      setTimeout(() => {
+        setConversation((prev) => [
+          ...prev,
+          {
+            sender: data.personalities.personality_pair.split(" × ")[0],
+            message: message.message,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+        setIsTyping(false);
+        setMockReading(true);
+        // Random delay between 5-10 seconds
+        const delay = Math.random() * 5000 + 5000;
+        setTimeout(() => {
+          setMockReading(false);
+          setIsTyping(true); // Show thinking component
+          setTimeout(() => {
+            responder([...previousMessages, message]);
+          }, 1000); // Additional delay for thinking
+        }, delay);
+      }, 1000); // Initial delay for message appearance
+    } catch (error) {
+      console.error("Asker error:", error);
+      setIsTyping(false);
+      setMockReading(false);
+    }
+  };
+
+  const responder = async (previousMessages) => {
+    if (!data?.subject || !data?.personalities?.personality_pair || stop) return;
+    try {
+      const response = await axios.post("/api/responder", {
+        subject: data.subject,
+        personalityPair: data.personalities.personality_pair.split(" × ")[1],
+        previousMessage: previousMessages[previousMessages.length - 1],
+      });
+      const message = response.data.message;
+      setTimeout(() => {
+        setConversation((prev) => [
+          ...prev,
+          {
+            sender: data.personalities.personality_pair.split(" × ")[1],
+            message: message.message,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+        setIsTyping(false);
+        // Continue conversation if active
+        if (isConversationActive && !stop) {
+          const delay = Math.random() * 5000 + 5000;
+          setTimeout(() => {
+            setMockReading(true);
+            setTimeout(() => {
+              setMockReading(false);
+              setIsTyping(true);
+              setTimeout(() => {
+                asker([...previousMessages, message]);
+              }, 1000);
+            }, delay);
+          }, 1000);
+        }
+      }, 1000); // Delay for message appearance
+    } catch (error) {
+      console.error("Responder error:", error);
+      setIsTyping(false);
+      setMockReading(false);
+    }
+  };
+
+  const startConversation = () => {
+    if (data?.subject && data?.personalities?.personality_pair && !stop) {
+      asker([]);
+    }
+  };
+
+  const handleContinue = () => {
+    setStop(false);
+    setIsConversationActive(true);
+    startConversation();
+  };
+
+  const handleStop = () => {
+    setStop(true);
+    setIsConversationActive(false);
+    setIsTyping(false);
+    setMockReading(false);
+  };
 
   useEffect(() => {
-    setTimeout(() => {
-    asker();
-    }, 1000);
+    if (data && !stop) {
+      startConversation();
+    }
   }, [data]);
-
 
   const mockReadingText = [
     "Hmm, reading this...",
@@ -242,16 +247,9 @@ export default function TwinoChat({ params }) {
     "Wait, really?",
     "That makes sense...",
     "I've never thought about it that way...",
-    "Let me process this..."
+    "Let me process this...",
   ];
 
-  useEffect(() => {
-    setTimeout(() => {
-      setMockReadingFinished(true);
-    }, 5000);
-  }, [mockReadingFinished]);
-
-  
   return (
     <div
       className="flex flex-col h-screen font-sans"
@@ -286,7 +284,7 @@ export default function TwinoChat({ params }) {
             </motion.button>
             <div className="flex items-center gap-2 select-none">
               <TwinoLogo />
-              <div className="flex flex-col  sm:flex-row sm:items-start">
+              <div className="flex flex-col sm:flex-row sm:items-start">
                 <h1
                   className="text-2xl font-bold"
                   style={{
@@ -380,27 +378,18 @@ export default function TwinoChat({ params }) {
                   }}
                   role="menu"
                 >
-                  {topicOptions.map((topic) => (
-                    <button
-                      key={topic.id}
-                      onClick={() => {
-                        setSelectedTopic(topic);
-                        setShowTopicSelect(false);
-                        resetConversation();
-                      }}
-                      className={`block w-full px-4 py-2 text-left text-sm transition-colors duration-200 focus:outline-none ${
-                        selectedTopic.id === topic.id
-                          ? darkMode
-                            ? "bg-blue-900 text-white"
-                            : "bg-blue-100 text-blue-800"
-                          : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                      }`}
-                      role="menuitem"
-                      type="button"
-                    >
-                      {topic.name}
-                    </button>
-                  ))}
+                  <button
+                    className="block w-full px-4 py-2 text-left text-sm transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    role="menuitem"
+                    type="button"
+                    onClick={() => {
+                      setSelectedTopic("Sample Topic");
+                      setShowTopicSelect(false);
+                      resetConversation();
+                    }}
+                  >
+                    Sample Topic
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -411,71 +400,145 @@ export default function TwinoChat({ params }) {
               style={{ color: theme.text }}
               aria-label="Selected bot personalities"
             >
-              {data.personalities && (
-                <span>
-                  Personalities: {data.personalities.personality_pair}
-                </span>
-              )}
+              Personalities: {selectedPersonality}
             </span>
           </div>
         </div>
       </nav>
 
       {/* Chat Area */}
-      {data.length > 0 && data.map((message) => (
-        <p key={message.id}>{message.sender}: {message.message}{message.message}</p>
-      ))}
-     
-      <div className="w-full p-3 flex justify-end">
-        {!askerStatus && (
-          data.personalities && (
-            <Typing typer={data.personalities.personality_pair.split(" × ")[0]} />
+      <div
+        ref={chatContainerRef}
+        className="flex-1 pb-32 overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-gray-400 scrollbar-track-transparent"
+        style={{ backgroundColor: theme.bg }}
+      >
+        {conversation.map((msg, index) => {
+          const isAsker = msg.sender === selectedPersonality.split(" × ")[0];
+          const isSequential = index > 0 && conversation[index - 1].sender === msg.sender;
 
-        )
-        )}
-        {question && (
-          <div className="mt-4 max-w-[50%] border rounded-tl-md rounded-tr-md rounded-bl-md p-3" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
-            <p className="text-sm">{question.message}</p>
-          </div>
-        )}
-      </div>
-      <div className="w-full p-3 flex justify-start">
-        {!responderStatus && (
-          <>
-            {!mockReadingFinished && (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-                className="text-sm text-gray-600 italic mb-2"
+          return (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className={`flex w-full mb-2 ${isAsker ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-[70%] md:max-w-[60%] border rounded-lg p-3 shadow-sm
+                  ${isAsker 
+                    ? "rounded-tr-none" 
+                    : "rounded-tl-none"}`}
+                style={{
+                  backgroundColor: isAsker ? theme.bubbleUserBg : theme.responderBubbleBg,
+                  borderColor: theme.border,
+                  color: isAsker && !darkMode ? "white" : theme.text,
+                }}
               >
-                {mockReadingText[Math.floor(Date.now() / 1000) % mockReadingText.length]}
-              </motion.div>
-            )}
-           
-            {mockReadingFinished && data.personalities && (
-              <Typing typer={data.personalities.personality_pair.split(" × ")[1]} />
-            )}
-          </>
-        )}
-        
-        {answer && (
-          <div 
-            className="mt-4 max-w-[50%] border rounded-tl-md rounded-tr-md rounded-bl-md p-3" 
-            style={{ backgroundColor: theme.surface, borderColor: theme.border }}
-            
-          >
-            <p className="text-sm">{answer.message}</p>
-          </div>
-        )}
+                {!isSequential && (
+                  <p className="text-xs font-medium mb-1 opacity-75">{msg.sender}</p>
+                )}
+                <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                <span className="block text-right text-xs mt-1 opacity-50">
+                  {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+            </motion.div>
+          );
+        })}
+
+        <AnimatePresence>
+          {isTyping && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex w-full mb-4 justify-start"
+            >
+              <div
+                className="flex items-center space-x-2 max-w-[60%] border rounded-lg p-3 shadow-sm"
+                style={{ backgroundColor: theme.surface, borderColor: theme.border }}
+              >
+                <span className="text-sm font-medium">
+                  {mockReading ? selectedPersonality.split(" × ")[1] : selectedPersonality.split(" × ")[0]}
+                </span>
+                <div className="flex space-x-1">
+                  <motion.div
+                    animate={{ y: [0, -5, 0] }}
+                    transition={{ repeat: Infinity, duration: 1, delay: 0 }}
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: theme.accent }}
+                  />
+                  <motion.div
+                    animate={{ y: [0, -5, 0] }}
+                    transition={{ repeat: Infinity, duration: 1, delay: 0.2 }}
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: theme.accent }}
+                  />
+                  <motion.div
+                    animate={{ y: [0, -5, 0] }}
+                    transition={{ repeat: Infinity, duration: 1, delay: 0.4 }}
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: theme.accent }}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Input Area (Demo, disabled) */}
+      {/* Input Area with Reading Simulation */}
       <footer
         className="border-t absolute bottom-0 w-full py-3 px-4"
         style={{ backgroundColor: theme.surface, borderColor: theme.border }}
       >
+        {/* Reading Simulation Area */}
+        {mockReading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="max-w-3xl mx-auto flex mb-3"
+          >
+            <div
+              className="w-full border border-gray-200 rounded-lg p-3 bg-gray-50"
+              style={{ backgroundColor: `${theme.surface}90`, borderColor: theme.border }}
+            >
+              <div className="flex items-center space-x-2">
+                <svg
+                  className="animate-spin h-4 w-4 text-blue-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                <span className="text-sm text-gray-600 italic">
+                  {mockReadingText[Math.floor(Date.now() / 3000) % mockReadingText.length]}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Input Form */}
         <form
           className="max-w-3xl mx-auto flex gap-2"
           onSubmit={(e) => e.preventDefault()}
@@ -507,6 +570,37 @@ export default function TwinoChat({ params }) {
           >
             Send
           </button>
+          
+          {/* Conditionally show either Stop or Continue button */}
+          {!stop ? (
+            <motion.button
+              type="button"
+              onClick={handleStop}
+              whileHover={{ backgroundColor: theme.buttonHoverBg }}
+              whileTap={{ scale: 0.95 }}
+              className="rounded-md px-6 py-2 font-semibold transition-colors duration-300"
+              style={{
+                backgroundColor: theme.buttonBg,
+                color: "white",
+              }}
+            >
+              <Pause size={18} className="inline mr-1" /> Stop
+            </motion.button>
+          ) : (
+            <motion.button
+              type="button"
+              onClick={handleContinue}
+              whileHover={{ backgroundColor: theme.buttonHoverBg }}
+              whileTap={{ scale: 0.95 }}
+              className="rounded-md px-6 py-2 font-semibold transition-colors duration-300"
+              style={{
+                backgroundColor: theme.buttonBg,
+                color: "white",
+              }}
+            >
+              <Play size={18} className="inline mr-1" /> Continue
+            </motion.button>
+          )}
         </form>
       </footer>
     </div>

@@ -1,7 +1,7 @@
 import Image from "next/image";
 export default function Navbar() {
   return (
-    <div className="w-full flex justify-between items-center px-6 py-3 fixed top-0 bg-white shadow-sm border-b">
+    <div className="w-full z-50 backdrop-blur-sm flex justify-between items-center px-6 py-3 fixed top-0 bg-white shadow-sm border-b">
     {/* Logo and Branding */}
     <a href="/" className="flex items-center gap-3">
       <Image

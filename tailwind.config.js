@@ -8,6 +8,9 @@ const config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        ubuntu: ["Ubuntu", "sans-serif"], 
+      },
       colors: {
         navy: "#2C3E50",
         sky: "#3498DB",
