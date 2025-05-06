@@ -35,8 +35,11 @@ export default function ExploreTopics() {
     fetchTopics();
   }, []);
 
+<<<<<<< HEAD
   
 
+=======
+>>>>>>> connect
   return (
     <section className="py-12 max-sm:mt-100 px-4 md:px-6 relative">
       <motion.div 

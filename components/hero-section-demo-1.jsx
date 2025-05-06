@@ -80,39 +80,79 @@ export default function HeroSectionOne() {
           </motion.div>
         </div>
       </div>
-      <div className="w-full h-full p-5" >
-        <ul className="grid grid-cols-1 grid-rows-none gap-4 md:grid-cols-12 md:grid-rows-3 lg:gap-4 xl:max-h-[34rem] xl:grid-rows-2">
+      <div className="w-full pb-30   h-full p-5">
+        <motion.ul 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="grid grid-cols-1 grid-rows-none gap-4 md:grid-cols-12 md:grid-rows-3 lg:gap-4 xl:max-h-[34rem] xl:grid-rows-2"
+        >
           <GridItem
             area="md:[grid-area:1/1/2/7] xl:[grid-area:1/1/2/5]"
-            icon={<MessageSquare className="h-4 w-4 text-black dark:text-neutral-400" />}
+            icon={
+              <motion.div 
+                whileHover={{ rotate: 15, scale: 1.2 }}
+                className="bg-gradient-to-tr from-blue-500 to-indigo-600 p-2 rounded-lg"
+              >
+                <MessageSquare className="h-4 w-4 text-white" />
+              </motion.div>
+            }
             title="Dynamic Conversations"
             description="Generate engaging discussions between two AI bots on any topic you choose."
           />
           <GridItem
             area="md:[grid-area:1/7/2/13] xl:[grid-area:2/1/3/5]"
-            icon={<Brain className="h-4 w-4 text-black dark:text-neutral-400" />}
+            icon={
+              <motion.div 
+                whileHover={{ rotate: -15, scale: 1.2 }}
+                className="bg-gradient-to-tr from-purple-500 to-pink-600 p-2 rounded-lg"
+              >
+                <Brain className="h-4 w-4 text-white" />
+              </motion.div>
+            }
             title="Intelligent AI"
             description="Powered by advanced AI to deliver natural and insightful bot interactions."
           />
           <GridItem
             area="md:[grid-area:2/1/3/7] xl:[grid-area:1/5/3/8]"
-            icon={<Sliders className="h-4 w-4 text-black dark:text-neutral-400" />}
+            icon={
+              <motion.div 
+                whileHover={{ rotate: 15, scale: 1.2 }}
+                className="bg-gradient-to-tr from-amber-500 to-orange-600 p-2 rounded-lg"
+              >
+                <Sliders className="h-4 w-4 text-white" />
+              </motion.div>
+            }
             title="Customizable Personalities"
             description="Select unique bot personalities to tailor the conversation to your preferences."
           />
           <GridItem
             area="md:[grid-area:2/7/3/13] xl:[grid-area:1/8/2/13]"
-            icon={<Sparkles className="h-4 w-4 text-black dark:text-neutral-400" />}
+            icon={
+              <motion.div 
+                whileHover={{ rotate: -15, scale: 1.2 }}
+                className="bg-gradient-to-tr from-cyan-500 to-blue-600 p-2 rounded-lg"
+              >
+                <Sparkles className="h-4 w-4 text-white" />
+              </motion.div>
+            }
             title="Creative Insights"
             description="Unlock creative perspectives as bots explore topics in unexpected ways."
           />
           <GridItem
             area="md:[grid-area:3/1/4/13] xl:[grid-area:2/8/3/13]"
-            icon={<Search className="h-4 w-4 text-black dark:text-neutral-400" />}
+            icon={
+              <motion.div 
+                whileHover={{ rotate: 15, scale: 1.2 }}
+                className="bg-gradient-to-tr from-green-500 to-emerald-600 p-2 rounded-lg"
+              >
+                <Search className="h-4 w-4 text-white" />
+              </motion.div>
+            }
             title="Explore Topics"
             description="Search and discover new subjects for your bots to discuss effortlessly."
           />
-        </ul>
+        </motion.ul>
       </div>
     </>
   );

@@ -6,6 +6,7 @@ import { FaUser } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import {setCookie} from "cookies-next";
 import {createClient} from "@/utils/supabase/client";
+import { HoverEffect } from "@/components/ui/card-hover-effect";
 
 export default function MainInputArea() {
   const supabase = createClient();
@@ -71,6 +72,7 @@ export default function MainInputArea() {
       />
 
       {/* قسم اختيار الشخصيات باستخدام Dropdown */}
+      
       
     </div>
   );
