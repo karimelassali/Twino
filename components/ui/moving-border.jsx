@@ -16,14 +16,27 @@ export function Button({
   as: Component = "button",
   containerClassName,
   borderClassName,
-  duration,
+  duration = 5000,
   className,
+  colorMode = "rainbow",
+  isDarkMode = true,
   ...otherProps
 }) {
+  const colors = {
+    rainbow: "bg-[radial-gradient(var(--tw-gradient-stops))] from-purple-500 via-pink-500 to-blue-500",
+    blue: "bg-[radial-gradient(#0ea5e9_40%,#3b82f6_70%,transparent_90%)]",
+    purple: "bg-[radial-gradient(#8b5cf6_40%,#a855f7_70%,transparent_90%)]",
+    green: "bg-[radial-gradient(#22c55e_40%,#10b981_70%,transparent_90%)]",
+    orange: "bg-[radial-gradient(#f97316_40%,#ea580c_70%,transparent_90%)]",
+    pink: "bg-[radial-gradient(#ec4899_40%,#be185d_70%,transparent_90%)]",
+  };
+  
+  const colorClass = colors[colorMode] || colors.rainbow;
+  
   return (
     <Component
       className={cn(
-        "relative h-5 w-40 overflow-hidden bg-transparent p-[1px] text-xl",
+        "relative h-12 w-40 overflow-hidden bg-transparent p-[1px] text-xl hover:scale-105 transition-transform duration-300",
         containerClassName
       )}
       style={{
@@ -33,17 +46,21 @@ export function Button({
       <div
         className="absolute inset-0"
         style={{ borderRadius: `calc(${borderRadius} * 0.96)` }}>
-        <MovingBorder duration={duration} rx="30%" ry="30%">
+        <MovingBorder duration={duration} rx="30%" ry="30%" isDarkMode={isDarkMode}>
           <div
             className={cn(
-              "h-20 w-20 bg-[radial-gradient(#0ea5e9_40%,transparent_60%)] opacity-[0.8]",
+              "h-20 w-20 opacity-[0.9] animate-pulse",
+              colorClass,
               borderClassName
             )} />
         </MovingBorder>
       </div>
       <div
         className={cn(
-          "relative flex h-full w-full items-center justify-center border border-slate-800 bg-slate-900/[0.8] text-sm text-white antialiased backdrop-blur-xl",
+          "relative flex h-full w-full items-center justify-center border-2 text-sm antialiased backdrop-blur-xl transition-all duration-300 hover:shadow-lg",
+          isDarkMode 
+            ? "border-slate-700/50 bg-black/80 text-white hover:bg-black/70" 
+            : "border-slate-300/70 bg-white/90 text-slate-800 hover:bg-white/95",
           className
         )}
         style={{
@@ -60,6 +77,7 @@ export const MovingBorder = ({
   duration = 3000,
   rx,
   ry,
+  isDarkMode = true,
   ...otherProps
 }) => {
   const pathRef = useRef();
@@ -88,6 +106,15 @@ export const MovingBorder = ({
         height="100%"
         {...otherProps}>
         <rect fill="none" width="100%" height="100%" rx={rx} ry={ry} ref={pathRef} />
+        <rect
+          className="animate-pulse"
+          fill="none"
+          stroke={isDarkMode ? "rgba(255,255,255,0.2)" : "rgba(30,64,175,0.3)"}
+          strokeWidth="2"
+          width="100%"
+          height="100%"
+          rx={rx}
+          ry={ry} />
       </svg>
       <motion.div
         style={{
@@ -96,7 +123,10 @@ export const MovingBorder = ({
           left: 0,
           display: "inline-block",
           transform,
-        }}>
+          filter: "blur(1px)",
+        }}
+        whileHover={{ filter: "blur(0px)", scale: 1.05 }}
+        transition={{ duration: 0.2 }}>
         {children}
       </motion.div>
     </>
