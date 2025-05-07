@@ -1,13 +1,16 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, RefreshCw, Moon, Sun, Sparkles, Pause, Play } from "lucide-react";
+import { ArrowLeft, RefreshCw, Moon, Sun, Sparkles, Pause, Play   , Square } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import React from "react";
 import axios from "axios";
 import Typing from "@/components/ui/typing";
+import toast, { Toaster } from 'react-hot-toast';
+import { GlowingEffect } from "@/components/ui/glowing-effect";
+
 
 // Twino logo SVG
 const TwinoLogo = () => (
@@ -50,6 +53,7 @@ function getInitials(name) {
     .toUpperCase();
 }
 
+
 export default function TwinoChat({ params }) {
   const { uid } = React.use(params);
   const router = useRouter();
@@ -66,7 +70,7 @@ export default function TwinoChat({ params }) {
       surface: "#002952",
       text: "#E1F5FE",
       bubbleBotBg: "#0A2A4D",
-      responderBubbleBg: "#1B365D", // Different color for responder
+      responderBubbleBg: "#1B365D", 
       bubbleUserBg: "#1B365D",
       buttonBg: "#144E8C",
       buttonHoverBg: "#1F6EC0",
@@ -75,12 +79,12 @@ export default function TwinoChat({ params }) {
       accent: "#3DB7E4",
     },
     lightMode: {
-      bg: "#F7FAFC",
+      bg: "#F0F8FF", // Slightly blue tint for better contrast
       surface: "#FFFFFF",
       text: "#1E293B",
       bubbleBotBg: "#E3E8F1",
-      responderBubbleBg: "#D1D9F6", // Different color for responder
-      bubbleUserBg: "#3DB7E4", // Changed color for user bubble in light mode
+      responderBubbleBg: "#D1D9F6", 
+      bubbleUserBg: "#3DB7E4",
       buttonBg: "#3DB7E4",
       buttonHoverBg: "#5AB0F9",
       border: "#CBD5E1",
@@ -89,166 +93,430 @@ export default function TwinoChat({ params }) {
     },
   };
 
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(false); // Default to dark mode
   const [conversation, setConversation] = useState([]);
-  const [isTyping, setIsTyping] = useState(false);
+  const [thinkingPersona, setThinkingPersona] = useState(null); // Track which persona is "thinking"
+  const [readingPersona, setReadingPersona] = useState(null); // Track which persona is "reading"
   const [selectedPersonality, setSelectedPersonality] = useState(botPersonalities[0].pair);
   const [selectedTopic, setSelectedTopic] = useState("");
   const [showTopicSelect, setShowTopicSelect] = useState(false);
   const chatContainerRef = useRef(null);
-  const [mockReading, setMockReading] = useState(false);
   const [data, setData] = useState(null);
   const [isConversationActive, setIsConversationActive] = useState(true);
   const [stop, setStop] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [timeoutIds, setTimeoutIds] = useState([]);
+  const stopRef = useRef(false);
+  const hasStartedConversation = useRef(false);
+  const [customQuestion, setCustomQuestion] = useState("");
+
 
   useEffect(() => {
-    supabase
-      .from("conversations")
-      .select("id, subject, personalities (personality_pair)")
-      .eq("id", uid)
-      .single()
-      .then(({ data, error }) => {
-        if (error) {
-          console.error("Supabase error:", error);
+    const storedTheme = localStorage.getItem('theme');
+    const isDark = storedTheme === 'dark';
+    document.documentElement.classList.toggle("dark", isDark);
+  
+    
+    // Update theme state if needed
+    if (theme !== storedTheme && storedTheme) {
+      setDarkMode(isDark);
+    }
+  }, []);
+  // Clear all timeouts on component unmount
+  useEffect(() => {
+    return () => {
+      timeoutIds.forEach(id => clearTimeout(id));
+    };
+  }, []);
+
+  // Add timeout ID to the list
+  const addTimeout = (id) => {
+    setTimeoutIds(prev => [...prev, id]);
+    return id;
+  };
+
+  useEffect(() => {
+    const fetchConversationData = async () => {
+      try {
+        // Fetch conversation details
+        const { data: conversationData, error: conversationError } = await supabase
+          .from("conversations")
+          .select("id, subject, personalities (personality_pair)")
+          .eq("id", uid)
+          .single();
+        
+        if (conversationError) {
+          console.error("Error fetching conversation:", conversationError);
+          toast.error("Failed to load conversation");
           return;
         }
-        setData(data);
-        setSelectedTopic(data.subject);
-        setSelectedPersonality(data.personalities.personality_pair);
-      });
+        // Generate and save title for the conversation
+        const { data: titleData, error: titleError } = await axios.post('/api/generate-title', {
+          subject: conversationData.subject,
+          personalityPair: conversationData.personalities.personality_pair
+        });
+
+        if (titleError) {
+          console.error("Error generating title:", titleError);
+        } else {
+          // Save the generated title to the conversation
+          const { error: updateError } = await supabase
+            .from('conversations')
+            .update({ generated_title: titleData.title })
+            .eq('id', uid);
+          
+          if (updateError) {
+            console.error("Error saving title:", updateError);
+          }
+        }
+                
+        setData(conversationData);
+        setSelectedTopic(conversationData.subject);
+        setSelectedPersonality(conversationData.personalities.personality_pair);
+        
+        // Fetch messages for this conversation
+        const { data: messagesData, error: messagesError } = await supabase
+          .from('messages')
+          .select()
+          .eq('conversation_id', uid)
+          
+        if (messagesError) {
+          console.error("Error fetching messages:", messagesError);
+          toast.error("Failed to load messages");
+          return;
+        }
+        
+        setMessages(messagesData);
+        
+        // If there are existing messages, load them and set stop to true
+        if (messagesData?.length > 0) {
+          setConversation(messagesData.map(msg => ({
+            sender: msg.sender,
+            message: msg.message,
+            timestamp: msg.created_at
+          })));
+          
+          // Automatically stop the conversation if messages exist
+          setStop(true);
+          setIsConversationActive(false);
+        } else {
+          // No messages, prepare to start conversation
+          setIsConversationActive(true);
+          setStop(false);
+        }
+      } catch (error) {
+        console.error("Unexpected error:", error);
+        toast.error("Something went wrong");
+      }
+    };
+    
+    fetchConversationData();
   }, [uid]);
 
+  const handleCustomQuestionSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!customQuestion.trim()) return;
+    
+    const askerPersona = data.personalities.personality_pair.split(" × ")[0];
+    
+    // Add the custom question to the conversation as coming from the asker
+    const newMessage = {
+      sender: askerPersona,
+      message: customQuestion,
+      timestamp: new Date().toISOString(),
+    };
+    
+    setConversation(prev => [...prev, newMessage]);
+    
+    // Save to Supabase if needed
+    try {
+      await supabase.from('messages').insert({
+        conversation_id: uid,
+        sender: askerPersona,
+        content: customQuestion,
+        created_at: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error saving message:", error);
+    }
+    
+    // Clear the input
+    setCustomQuestion("");
+    
+    // Continue the conversation with the responder
+    setStop(false);
+    stopRef.current = false;
+    setIsConversationActive(true);
+    
+    // Get all messages including the new custom question
+    const allMessages = [...conversation, newMessage].map(msg => ({
+      sender: msg.sender,
+      message: msg.message
+    }));
+    
+    // Call responder with the updated messages
+    responder(allMessages);
+  };
+
+  // Update the stopRef when stop state changes
+  useEffect(() => {
+    stopRef.current = stop;
+  }, [stop]);
+  
+  // Scroll to bottom when messages change
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [conversation, isTyping, mockReading]);
+  }, [conversation, thinkingPersona, readingPersona]);
 
-  const resetConversation = () => {
+  // Start conversation after data is loaded (if no existing messages)
+  useEffect(() => {
+    if (data && !stop && !hasStartedConversation.current) {
+      hasStartedConversation.current = true;
+      startConversation();
+    }
+  }, [data, stop]);
+
+  const resetConversation = async () => {
+    // Clear existing timeouts
+    timeoutIds.forEach(id => clearTimeout(id));
+    setTimeoutIds([]);
+    
+    // Reset states
     setConversation([]);
+    setThinkingPersona(null);
+    setReadingPersona(null);
     setIsConversationActive(true);
     setStop(false);
-    startConversation();
+    stopRef.current = false;
+    
+    // Clear messages from database
+    try {
+      await supabase
+        .from('messages')
+        .delete()
+        .eq('conversation_id', uid);
+      
+      toast.success("Conversation reset");
+      
+      // Start new conversation after a short delay
+      setTimeout(() => {
+        startConversation();
+      }, 500);
+    } catch (error) {
+      console.error("Error resetting conversation:", error);
+      toast.error("Failed to reset conversation");
+    }
   };
 
   const theme = darkMode ? colors.darkMode : colors.lightMode;
 
   const asker = async (previousMessages) => {
-    if (!data?.subject || !data?.personalities?.personality_pair || stop) return;
-    setIsTyping(true);
+    if (!data?.subject || !data?.personalities?.personality_pair || stopRef.current) return;
+    
+    const askerPersona = data.personalities.personality_pair.split(" × ")[0];
+    setThinkingPersona(askerPersona);
+    
     try {
       const response = await axios.post("/api/asker", {
         subject: data.subject,
-        personalityPair: data.personalities.personality_pair.split(" × ")[0],
+        personalityPair: askerPersona,
         previousMessages,
       });
+      
       const message = response.data.message;
-      setTimeout(() => {
-        setConversation((prev) => [
+      
+      // Only proceed if we're not stopped
+      if (!stopRef.current) {
+        // Add message to conversation
+        setConversation(prev => [
           ...prev,
           {
-            sender: data.personalities.personality_pair.split(" × ")[0],
+            sender: askerPersona,
             message: message.message,
             timestamp: new Date().toISOString(),
           },
         ]);
-        setIsTyping(false);
-        setMockReading(true);
-        // Random delay between 5-10 seconds
-        const delay = Math.random() * 5000 + 5000;
-        setTimeout(() => {
-          setMockReading(false);
-          setIsTyping(true); // Show thinking component
-          setTimeout(() => {
-            responder([...previousMessages, message]);
-          }, 1000); // Additional delay for thinking
-        }, delay);
-      }, 1000); // Initial delay for message appearance
+        
+        // Save message to database
+        try {
+          await supabase.from("messages").insert({
+            conversation_id: uid,
+            sender: askerPersona,
+            message: message.message,
+          });
+        } catch (dbError) {
+          console.error("Failed to save message:", dbError);
+          toast.error("Failed to save message");
+        }
+        
+        // Clear thinking indicator
+        setThinkingPersona(null);
+        
+        // Start reading phase for responder if not stopped
+        if (!stopRef.current) {
+          const responderPersona = data.personalities.personality_pair.split(" × ")[1];
+          setReadingPersona(responderPersona);
+          
+          // Random delay between 4-8 seconds for "reading"
+          const delay = Math.random() * 4000 + 4000;
+          
+          const timeoutId = addTimeout(setTimeout(() => {
+            if (!stopRef.current) {
+              setReadingPersona(null);
+              responder([...previousMessages, message]);
+            }
+          }, delay));
+        }
+      }
     } catch (error) {
       console.error("Asker error:", error);
-      setIsTyping(false);
-      setMockReading(false);
+      setThinkingPersona(null);
+      setReadingPersona(null);
+      toast.error("Failed to generate response");
     }
   };
 
   const responder = async (previousMessages) => {
-    if (!data?.subject || !data?.personalities?.personality_pair || stop) return;
+    if (!data?.subject || !data?.personalities?.personality_pair || stopRef.current) return;
+    
+    const responderPersona = data.personalities.personality_pair.split(" × ")[1];
+    setThinkingPersona(responderPersona);
+    
     try {
       const response = await axios.post("/api/responder", {
         subject: data.subject,
-        personalityPair: data.personalities.personality_pair.split(" × ")[1],
+        personalityPair: responderPersona,
         previousMessage: previousMessages[previousMessages.length - 1],
       });
+      
       const message = response.data.message;
-      setTimeout(() => {
-        setConversation((prev) => [
+      
+      // Only proceed if we're not stopped
+      if (!stopRef.current) {
+        // Add message to conversation
+        setConversation(prev => [
           ...prev,
           {
-            sender: data.personalities.personality_pair.split(" × ")[1],
+            sender: responderPersona,
             message: message.message,
             timestamp: new Date().toISOString(),
           },
         ]);
-        setIsTyping(false);
-        // Continue conversation if active
-        if (isConversationActive && !stop) {
-          const delay = Math.random() * 5000 + 5000;
-          setTimeout(() => {
-            setMockReading(true);
-            setTimeout(() => {
-              setMockReading(false);
-              setIsTyping(true);
-              setTimeout(() => {
-                asker([...previousMessages, message]);
-              }, 1000);
-            }, delay);
-          }, 1000);
+        
+        // Save message to database
+        try {
+          await supabase.from("messages").insert({
+            conversation_id: uid,
+            sender: responderPersona,
+            message: message.message,
+          });
+        } catch (dbError) {
+          console.error("Failed to save message:", dbError);
+          toast.error("Failed to save message");
         }
-      }, 1000); // Delay for message appearance
+        
+        // Clear thinking indicator
+        setThinkingPersona(null);
+        
+        // Continue conversation if active
+        if (!stopRef.current) {
+          const askerPersona = data.personalities.personality_pair.split(" × ")[0];
+          setReadingPersona(askerPersona);
+          
+          // Random delay between 4-8 seconds for "reading"
+          const delay = Math.random() * 4000 + 4000;
+          
+          const timeoutId = addTimeout(setTimeout(() => {
+            if (!stopRef.current) {
+              setReadingPersona(null);
+              asker([...previousMessages, message]);
+            }
+          }, delay));
+        }
+      }
     } catch (error) {
       console.error("Responder error:", error);
-      setIsTyping(false);
-      setMockReading(false);
+      setThinkingPersona(null);
+      setReadingPersona(null);
+      toast.error("Failed to generate response");
     }
   };
 
   const startConversation = () => {
-    if (data?.subject && data?.personalities?.personality_pair && !stop) {
+    if (data?.subject && data?.personalities?.personality_pair && !stopRef.current) {
       asker([]);
     }
   };
 
   const handleContinue = () => {
     setStop(false);
+    stopRef.current = false;
     setIsConversationActive(true);
-    startConversation();
+    
+    // Get all previous messages to continue the conversation
+    const previousMessages = conversation.map(msg => ({
+      sender: msg.sender, 
+      message: msg.message
+    }));
+    
+    // Determine whose turn it is based on the last message
+    if (previousMessages.length > 0) {
+      const lastSender = previousMessages[previousMessages.length - 1].sender;
+      const askerPersona = data.personalities.personality_pair.split(" × ")[0];
+      const responderPersona = data.personalities.personality_pair.split(" × ")[1];
+      
+      if (lastSender === askerPersona) {
+        // If asker was last, continue with responder
+        responder(previousMessages);
+      } else {
+        // If responder was last, continue with asker
+        asker(previousMessages);
+      }
+    } else {
+      // If no messages, start fresh
+      startConversation();
+    }
   };
 
   const handleStop = () => {
     setStop(true);
+    stopRef.current = true;
     setIsConversationActive(false);
-    setIsTyping(false);
-    setMockReading(false);
+    setThinkingPersona(null);
+    setReadingPersona(null);
+    
+    // Clear all pending timeouts
+    timeoutIds.forEach(id => clearTimeout(id));
+    setTimeoutIds([]);
+    
+    toast.success("Conversation paused");
   };
 
-  useEffect(() => {
-    if (data && !stop) {
-      startConversation();
-    }
-  }, [data]);
+  const mockReadingTexts = {
+    asker: [
+      "Hmm, interesting point...",
+      "Let me consider this...",
+      "That's a good perspective...",
+      "I see what you mean...",
+      "I'm thinking about that...",
+    ],
+    responder: [
+      "That's a good question...",
+      "Let me think about this...",
+      "I need to consider that...",
+      "Interesting perspective...",
+      "I'm forming my thoughts...",
+    ]
+  };
 
-  const mockReadingText = [
-    "Hmm, reading this...",
-    "That's interesting...",
-    "Oh, I knew it!",
-    "Let me think about this...",
-    "I see what you mean...",
-    "Interesting point...",
-    "Wait, really?",
-    "That makes sense...",
-    "I've never thought about it that way...",
-    "Let me process this...",
-  ];
+  // Get a random reading text based on persona type
+  const getRandomReadingText = (isAsker) => {
+    const texts = isAsker ? mockReadingTexts.asker : mockReadingTexts.responder;
+    return texts[Math.floor(Math.random() * texts.length)];
+  };
 
   return (
     <div
@@ -284,7 +552,7 @@ export default function TwinoChat({ params }) {
             </motion.button>
             <div className="flex items-center gap-2 select-none">
               <TwinoLogo />
-              <div className="flex flex-col sm:flex-row sm:items-start">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
                 <h1
                   className="text-2xl font-bold"
                   style={{
@@ -313,15 +581,15 @@ export default function TwinoChat({ params }) {
               whileTap={{ scale: 0.95 }}
               onClick={resetConversation}
               aria-label="Reset Conversation"
-              className="px-3 py-1 rounded-md font-medium transition-colors duration-300"
+              className="px-3 py-1 rounded-md font-medium transition-colors duration-300 flex items-center gap-1"
               style={{
                 backgroundColor: theme.buttonBg,
                 color: "white",
-                opacity: 0.75,
               }}
               type="button"
             >
-              <RefreshCw size={18} />
+              <RefreshCw size={16} />
+              <span className="hidden sm:inline">Reset</span>
             </motion.button>
             <motion.button
               whileHover={{ backgroundColor: theme.buttonHoverBg }}
@@ -332,11 +600,10 @@ export default function TwinoChat({ params }) {
               style={{
                 backgroundColor: theme.buttonBg,
                 color: "white",
-                opacity: 0.75,
               }}
               type="button"
             >
-              {darkMode ? <Moon size={18} /> : <Sun size={18} />}
+              {darkMode ? <Sun size={16} /> : <Moon size={16} />}
             </motion.button>
           </div>
         </div>
@@ -363,7 +630,7 @@ export default function TwinoChat({ params }) {
               type="button"
             >
               <Sparkles size={14} style={{ color: colors.lightBlue }} />
-              Topic: {selectedTopic}
+              <span className="max-w-xs truncate">Topic: {selectedTopic}</span>
             </button>
             <AnimatePresence>
               {showTopicSelect && (
@@ -400,7 +667,7 @@ export default function TwinoChat({ params }) {
               style={{ color: theme.text }}
               aria-label="Selected bot personalities"
             >
-              Personalities: {selectedPersonality}
+              {selectedPersonality}
             </span>
           </div>
         </div>
@@ -409,200 +676,273 @@ export default function TwinoChat({ params }) {
       {/* Chat Area */}
       <div
         ref={chatContainerRef}
-        className="flex-1 pb-32 overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-gray-400 scrollbar-track-transparent"
+        className="flex-1 pb-28 overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-gray-400 scrollbar-track-transparent"
         style={{ backgroundColor: theme.bg }}
       >
-        {conversation.map((msg, index) => {
-          const isAsker = msg.sender === selectedPersonality.split(" × ")[0];
-          const isSequential = index > 0 && conversation[index - 1].sender === msg.sender;
-
-          return (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className={`flex w-full mb-2 ${isAsker ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-[70%] md:max-w-[60%] border rounded-lg p-3 shadow-sm
-                  ${isAsker 
-                    ? "rounded-tr-none" 
-                    : "rounded-tl-none"}`}
-                style={{
-                  backgroundColor: isAsker ? theme.bubbleUserBg : theme.responderBubbleBg,
-                  borderColor: theme.border,
-                  color: isAsker && !darkMode ? "white" : theme.text,
-                }}
+        <div className="max-w-4xl mx-auto">
+          {conversation.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-64 text-center">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="p-6 rounded-lg"
+                style={{ backgroundColor: theme.surface, borderColor: theme.border }}
               >
-                {!isSequential && (
-                  <p className="text-xs font-medium mb-1 opacity-75">{msg.sender}</p>
-                )}
-                <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                <span className="block text-right text-xs mt-1 opacity-50">
-                  {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
-            </motion.div>
-          );
-        })}
+                <h3 className="text-lg font-semibold mb-2" style={{ color: theme.accent }}>
+                  Welcome to Twino!
+                </h3>
+                <p className="text-sm" style={{ color: theme.subText }}>
+                  Watch as two AI personalities have a conversation about {selectedTopic}.
+                </p>
+              </motion.div>
+            </div>
+          )}
+          
+          {conversation.map((msg, index) => {
+            const isAsker = msg.sender === selectedPersonality.split(" × ")[0];
+            const isSequential = index > 0 && conversation[index - 1].sender === msg.sender;
 
-        <AnimatePresence>
-          {isTyping && (
+            return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className={`flex w-full mb-4 ${isAsker ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[80%] md:max-w-[70%] border rounded-lg p-3 shadow-sm
+                    ${isAsker 
+                      ? "rounded-tr-none" 
+                      : "rounded-tl-none"}`}
+                  style={{
+                    backgroundColor: isAsker ? theme.bubbleUserBg : theme.responderBubbleBg,
+                    borderColor: theme.border,
+                    color: isAsker && !darkMode ? "white" : theme.text,
+                  }}
+                >
+                  {!isSequential && (
+                    <p className="text-xs font-medium mb-1 opacity-75">{msg.sender}</p>
+                  )}
+                  <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                  <span className="block text-right text-xs mt-1 opacity-50">
+                    {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })}
+
+          {/* Thinking Indicator - Appears inline with the conversation */}
+          {thinkingPersona && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex w-full mb-4 justify-start"
+              className={`flex w-full mb-4 ${thinkingPersona === selectedPersonality.split(" × ")[0] ? "justify-end" : "justify-start"}`}
             >
               <div
-                className="flex items-center space-x-2 max-w-[60%] border rounded-lg p-3 shadow-sm"
-                style={{ backgroundColor: theme.surface, borderColor: theme.border }}
+                className={`flex items-center space-x-2 max-w-[60%] border rounded-lg p-3 shadow-sm
+                  ${thinkingPersona === selectedPersonality.split(" × ")[0] ? "rounded-tr-none" : "rounded-tl-none"}`}
+                style={{ 
+                  backgroundColor: thinkingPersona === selectedPersonality.split(" × ")[0] 
+                    ? theme.bubbleUserBg 
+                    : theme.responderBubbleBg,
+                  borderColor: theme.border,
+                  color: thinkingPersona === selectedPersonality.split(" × ")[0] && !darkMode ? "white" : theme.text,
+                }}
               >
-                <span className="text-sm font-medium">
-                  {mockReading ? selectedPersonality.split(" × ")[1] : selectedPersonality.split(" × ")[0]}
-                </span>
+                <span className="text-sm">{thinkingPersona}</span>
                 <div className="flex space-x-1">
                   <motion.div
                     animate={{ y: [0, -5, 0] }}
                     transition={{ repeat: Infinity, duration: 1, delay: 0 }}
                     className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: theme.accent }}
+                    style={{ backgroundColor: thinkingPersona === selectedPersonality.split(" × ")[0] && !darkMode 
+                      ? "white" 
+                      : theme.accent }}
                   />
                   <motion.div
                     animate={{ y: [0, -5, 0] }}
                     transition={{ repeat: Infinity, duration: 1, delay: 0.2 }}
                     className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: theme.accent }}
+                    style={{ backgroundColor: thinkingPersona === selectedPersonality.split(" × ")[0] && !darkMode 
+                      ? "white" 
+                      : theme.accent }}
                   />
                   <motion.div
                     animate={{ y: [0, -5, 0] }}
                     transition={{ repeat: Infinity, duration: 1, delay: 0.4 }}
                     className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: theme.accent }}
+                    style={{ backgroundColor: thinkingPersona === selectedPersonality.split(" × ")[0] && !darkMode 
+                      ? "white" 
+                      : theme.accent }}
                   />
                 </div>
               </div>
             </motion.div>
           )}
-        </AnimatePresence>
-      </div>
 
-      {/* Input Area with Reading Simulation */}
-      <footer
-        className="border-t absolute bottom-0 w-full py-3 px-4"
-        style={{ backgroundColor: theme.surface, borderColor: theme.border }}
-      >
-        {/* Reading Simulation Area */}
-        {mockReading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className="max-w-3xl mx-auto flex mb-3"
-          >
-            <div
-              className="w-full border border-gray-200 rounded-lg p-3 bg-gray-50"
-              style={{ backgroundColor: `${theme.surface}90`, borderColor: theme.border }}
+          {/* Reading Indicator - Appears inline with the conversation */}
+          {readingPersona && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className={`flex w-full mb-4 ${readingPersona === selectedPersonality.split(" × ")[0] ? "justify-end" : "justify-start"}`}
             >
-              <div className="flex items-center space-x-2">
-                <svg
-                  className="animate-spin h-4 w-4 text-blue-500"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                <span className="text-sm text-gray-600 italic">
-                  {mockReadingText[Math.floor(Date.now() / 3000) % mockReadingText.length]}
+              <div
+                className={`flex items-center space-x-2 max-w-[70%] border rounded-lg p-3 shadow-sm
+                  ${readingPersona === selectedPersonality.split(" × ")[0] ? "rounded-tr-none" : "rounded-tl-none"}`}
+                style={{ 
+                  backgroundColor: readingPersona === selectedPersonality.split(" × ")[0] 
+                    ? theme.bubbleUserBg 
+                    : theme.responderBubbleBg,
+                  borderColor: theme.border,
+                  color: readingPersona === selectedPersonality.split(" × ")[0] && !darkMode ? "white" : theme.text,
+                  opacity: 0.8
+                }}
+              >
+                <span className="text-sm font-medium">{readingPersona}</span>
+                <span className="text-sm italic">
+                  {getRandomReadingText(readingPersona === selectedPersonality.split(" × ")[0])}
                 </span>
               </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Input Form */}
-        <form
-          className="max-w-3xl mx-auto flex gap-2"
-          onSubmit={(e) => e.preventDefault()}
-          aria-label="Message input form (demo only)"
-        >
-          <input
-            type="text"
-            className="flex-1 rounded-md border px-4 py-2 text-base outline-none transition-colors duration-300"
-            placeholder="Type your message... (demo only)"
-            disabled
-            style={{
-              backgroundColor: theme.bg,
-              borderColor: theme.border,
-              color: theme.text,
-            }}
-            aria-disabled="true"
-          />
-          <button
-            type="submit"
-            disabled
-            className="rounded-md px-6 py-2 font-semibold transition-colors duration-300"
-            style={{
-              backgroundColor: theme.buttonBg,
-              color: "white",
-              opacity: 0.6,
-              cursor: "not-allowed",
-            }}
-            aria-disabled="true"
-          >
-            Send
-          </button>
-          
-          {/* Conditionally show either Stop or Continue button */}
-          {!stop ? (
-            <motion.button
-              type="button"
-              onClick={handleStop}
-              whileHover={{ backgroundColor: theme.buttonHoverBg }}
-              whileTap={{ scale: 0.95 }}
-              className="rounded-md px-6 py-2 font-semibold transition-colors duration-300"
-              style={{
-                backgroundColor: theme.buttonBg,
-                color: "white",
-              }}
-            >
-              <Pause size={18} className="inline mr-1" /> Stop
-            </motion.button>
-          ) : (
-            <motion.button
-              type="button"
-              onClick={handleContinue}
-              whileHover={{ backgroundColor: theme.buttonHoverBg }}
-              whileTap={{ scale: 0.95 }}
-              className="rounded-md px-6 py-2 font-semibold transition-colors duration-300"
-              style={{
-                backgroundColor: theme.buttonBg,
-                color: "white",
-              }}
-            >
-              <Play size={18} className="inline mr-1" /> Continue
-            </motion.button>
+            </motion.div>
           )}
-        </form>
+        </div>
+      </div>
+
+      {/* Input Area */}
+      <footer
+        className="border-t fixed bottom-0 w-full py-4 px-4 shadow-lg"
+        style={{ 
+          backgroundColor: theme.surface, 
+          borderColor: theme.border,
+          boxShadow: `0 -4px 6px -1px ${darkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.1)'}`
+        }}
+      >
+        <div className="max-w-4xl mx-auto">
+          {isConversationActive ? (
+            <div className="flex gap-3 items-center">
+              {/* Input Field (Disabled during active conversation) */}
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  className="w-full rounded-lg border px-4 py-2.5 text-base outline-none transition-colors duration-300"
+                  placeholder="Twino is having an autonomous conversation..."
+                  disabled
+                  style={{
+                    backgroundColor: `${theme.bg}90`,
+                    borderColor: theme.border,
+                    color: theme.subText,
+                  }}
+                  aria-disabled="true"
+                />
+                <GlowingEffect
+                  glow={true}
+                  disabled={false}
+                  proximity={64}
+                  spread={20}
+                  blur={8}
+                  inactiveZone={0.2}
+                  className="opacity-30"
+                />
+              </div>
+              
+              {/* Stop Button */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleStop}
+                className="px-4 py-2.5 font-ubuntu rounded-lg font-medium flex items-center gap-2 transition-colors duration-300 shadow-md"
+                style={{
+                  backgroundColor: theme.errorBg,
+                  color: "black",
+                }}
+                type="button"
+                aria-label="Stop conversation"
+              >
+                <span>Stop</span>
+                <Square size={16} />
+              </motion.button>
+            </div>
+          ) : (
+            <form onSubmit={handleCustomQuestionSubmit} className="w-full">
+              <div className="flex items-center gap-2">
+                <motion.div 
+                  initial={{ opacity: 0.8, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex-1 relative"
+                >
+                  <input
+                    type="text"
+                    value={customQuestion}
+                    onChange={(e) => setCustomQuestion(e.target.value)}
+                    placeholder={`Ask as ${data?.personalities?.personality_pair.split(" × ")[0]}...`}
+                    className="w-full rounded-lg px-4 py-3 outline-none transition-all duration-300 focus:ring-2 text-base"
+                    style={{
+                      backgroundColor: darkMode ? theme.bubbleBotBg : theme.surface,
+                      color: theme.text,
+                      border: `1px solid ${theme.border}`,
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+                    }}
+                  />
+                  <GlowingEffect
+                    glow={!!customQuestion}
+                    disabled={false}
+                    proximity={64}
+                    spread={20}
+                    blur={8}
+                    inactiveZone={0.2}
+                  />
+                </motion.div>
+                <div className="flex gap-2">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    type="submit"
+                    disabled={!customQuestion.trim()}
+                    className="rounded-lg px-5 py-3 font-medium transition-all duration-300 flex items-center gap-2 shadow-md"
+                    style={{
+                      backgroundColor: customQuestion.trim() ? theme.buttonBg : `${theme.buttonBg}80`,
+                      color: darkMode ? "white" : theme.text,
+                      opacity: customQuestion.trim() ? 1 : 0.7,
+                    }}
+                    aria-label="Send message"
+                  >
+                    <span>Send</span>
+                    <Sparkles size={16} className="animate-pulse" />
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleContinue}
+                    className="rounded-lg px-5 py-3 font-medium transition-all duration-300 flex items-center gap-2 shadow-md"
+                    style={{
+                      backgroundColor: theme.successBg,
+                      color: darkMode ? "white" : "black",
+                      border: darkMode ? "none" : "1px solid rgba(0,0,0,0.1)",
+                      textShadow: darkMode ? "none" : "0px 1px 2px rgba(0,0,0,0.2)"
+                    }}
+                    type="button"
+                    aria-label="Continue conversation"
+                  >
+                    <span>Continue</span>
+                    <Play size={16} />
+                  </motion.button>
+                </div>
+              </div>
+            </form>
+          )}
+        </div>
       </footer>
-    </div>
+
+     </div>
   );
 }

@@ -26,7 +26,7 @@ export async function POST(req) {
     const [_, bot2Name] = personalityPair.split(" × "); // Second bot (answerer)
 
     // Generate Bot 2's (answerer) response
-    const bot2Prompt = `You are ${bot2Name}. Respond to the previous message from ${personalityPair.split(" × ")[0]} in a natural, conversational way about the topic "${subject}" always in clean arbic language. Keep your response concise (1-2 sentences).\nPrevious message: ${previousMessage.message}`;
+    const bot2Prompt = `You are ${bot2Name} discussing "${subject}". Respond as a true ${bot2Name} would - with your unique perspective, occasional colloquialisms, and authentic voice. Address the point raised by ${previousMessage.sender}: "${previousMessage.message}" Keep your response concise (1-3 sentences), conversational, and reflective of your expertise and personality. Avoid any AI-like phrasing or formality that would make you sound robotic. Occasionally challenge conventional wisdom with a fresh perspective. Feel free to be mildly provocative when appropriate to stimulate deeper thinking.`;
 
     const bot2Result = await generateText({
       model: google('gemini-1.5-flash'), // Use 'gemini-pro' if 'gemini-1.5-flash' fails

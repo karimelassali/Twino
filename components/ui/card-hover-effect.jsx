@@ -60,7 +60,7 @@ export const HoverEffect = ({
             mouseY={mouseY}
             isHovered={hoveredIndex === idx}>
             <CardTitle className="text-slate-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-              {item.title}
+              {item.generated_title || item.title}
             </CardTitle>
             <CardDescription className="text-slate-600 dark:text-slate-300 group-hover:text-slate-700 dark:group-hover:text-slate-200">
               {item.description}
