@@ -11,7 +11,42 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { HeroHighlight , Highlight} from "@/components/ui/hero-highlight";
+import { HeroHighlight, Highlight } from "@/components/ui/hero-highlight";
+
+const GridItem = ({ area, icon, title, description }) => {
+  return (
+    <motion.li 
+      className={`min-h-[14rem] list-none ${area}`}
+      whileHover={{ scale: 1.02 }}
+      transition={{ duration: 0.2 }}
+    >
+      <div className="relative h-full rounded-2xl border p-2 md:rounded-3xl md:p-3">
+        <GlowingEffect
+          spread={40}
+          glow={true}
+          disabled={false}
+          proximity={64}
+          inactiveZone={0.01}
+        />
+        <div className="border-0.75 relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl p-6 md:p-6 dark:shadow-[0px_0px_27px_0px_#2D2D2D]">
+          <div className="relative flex flex-1 flex-col justify-between gap-3">
+            <div className="w-fit rounded-lg border border-gray-600 p-2">
+              {icon}
+            </div>
+            <div className="space-y-3">
+              <h3 className="-tracking-4 pt-0.5 font-sans text-xl/[1.375rem] font-semibold text-balance text-black md:text-2xl/[1.875rem] dark:text-white">
+                {title}
+              </h3>
+              <h2 className="font-sans text-sm/[1.125rem] text-black md:text-base/[1.375rem] dark:text-neutral-400 [&_b]:md:font-semibold [&_strong]:md:font-semibold">
+                {description}
+              </h2>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.li>
+  );
+};
 
 export default function HeroSectionOne() {
   return (
@@ -27,7 +62,7 @@ export default function HeroSectionOne() {
           <div className="absolute mx-auto h-px w-40 bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
         </div>
         <div className="px-4 py-10 md:py-20">
-          <h1 className="relative  space-y-2 z-10 mb-10 mx-auto max-w-4xl text-center text-2xl font-ubuntu font-bold text-slate-700 md:text-4xl lg:text-7xl dark:text-slate-300">
+          <h1 className="relative space-y-2 z-10 mb-10 mx-auto max-w-4xl text-center text-2xl font-ubuntu font-bold text-slate-700 md:text-4xl lg:text-7xl dark:text-slate-300">
             {"Twino, the AI app that makes two bots talk about any subject"
               .split(" ")
               .map((word, index) => (
@@ -80,7 +115,7 @@ export default function HeroSectionOne() {
           </motion.div>
         </div>
       </div>
-      <div className="w-full pb-30   h-full p-5">
+      <div className="w-full pb-30 h-full p-5">
         <motion.ul 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -157,34 +192,3 @@ export default function HeroSectionOne() {
     </>
   );
 }
-
-const GridItem = ({ area, icon, title, description }) => {
-  return (
-    <li className={`min-h-[14rem] list-none ${area}`}>
-      <div className="relative h-full rounded-2xl border p-2 md:rounded-3xl md:p-3">
-        <GlowingEffect
-          spread={40}
-          glow={true}
-          disabled={false}
-          proximity={64}
-          inactiveZone={0.01}
-        />
-        <div className="border-0.75 relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl p-6 md:p-6 dark:shadow-[0px_0px_27px_0px_#2D2D2D]">
-          <div className="relative flex flex-1 flex-col justify-between gap-3">
-            <div className="w-fit rounded-lg border border-gray-600 p-2">
-              {icon}
-            </div>
-            <div className="space-y-3">
-              <h3 className="-tracking-4 pt-0.5 font-sans text-xl/[1.375rem] font-semibold text-balance text-black md:text-2xl/[1.875rem] dark:text-white">
-                {title}
-              </h3>
-              <h2 className="font-sans text-sm/[1.125rem] text-black md:text-base/[1.375rem] dark:text-neutral-400 [&_b]:md:font-semibold [&_strong]:md:font-semibold">
-                {description}
-              </h2>
-            </div>
-          </div>
-        </div>
-      </div>
-    </li>
-  );
-};

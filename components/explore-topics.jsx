@@ -50,7 +50,7 @@ export default function ExploreTopics() {
           <HoverEffect 
             className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
             items={topics.map(topic => ({ 
-              title: topic.subject, 
+              title: topic.generated_title || topic.subject, 
               description: topic.subject, 
               icon: <Sparkles className="h-4 w-4 text-neutral-100" />, 
               link: `/chat/${topic.id}` 
