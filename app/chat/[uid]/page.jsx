@@ -607,6 +607,7 @@ export default function TwinoChat({ params }) {
             </motion.button>
           </div>
         </div>
+        
       </motion.header>
 
       {/* Topic and Personality Selection Bar */}
