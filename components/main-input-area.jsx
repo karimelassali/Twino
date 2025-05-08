@@ -7,6 +7,11 @@ import { useRouter } from "next/navigation";
 import {setCookie} from "cookies-next";
 import {createClient} from "@/utils/supabase/client";
 import { HoverEffect } from "@/components/ui/card-hover-effect";
+import toast from "react-hot-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { useUser } from "@clerk/nextjs";
+import { useEffect } from "react";
+
 
 export default function MainInputArea() {
   const supabase = createClient();
@@ -18,6 +23,13 @@ export default function MainInputArea() {
     "Write a Javascript method to reverse a string",
     "How to assemble your own PC?",
   ];
+
+  const [userData, setUserData] = useState(null);
+  const { isLoaded, isSignedIn, user } = useUser();
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+    setUserData(user);
+  }, [isLoaded, isSignedIn]);
 
   // حالة لتخزين الموضوع والشخصيات المختارة
   const [subject, setSubject] = useState("");
@@ -49,7 +61,7 @@ export default function MainInputArea() {
     try {
       setCookie("subject", subject);
       const { data, error } = await supabase.from('conversations').insert({
-        user_id: crypto.randomUUID(),
+        user_id: userData.id,
         subject: subject,
         personality_pair_id: '973783bb-8e80-401a-aa19-81f7a8cd0776',
       })
@@ -70,7 +82,9 @@ export default function MainInputArea() {
         onChange={handleChange}
         onSubmit={onSubmit}
       />
-
+      {userData && <div className="text-xs mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded">
+        <code>User ID: {userData.id}</code>
+      </div>}
       {/* قسم اختيار الشخصيات باستخدام Dropdown */}
       
       
