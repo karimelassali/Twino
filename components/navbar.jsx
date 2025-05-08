@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Sun, Moon, ChevronDown, Globe } from "lucide-react";
+import { UserButton } from "./user-button";
 
 // Custom hook for persisting state in localStorage
 function useLocalStorage(key, initialValue) {
@@ -327,93 +328,8 @@ export default function Navbar() {
               </AnimatePresence>
             </div>
 
-            {/* Login Button */}
-            <motion.button
-              variants={buttonHoverVariants}
-              whileHover="hover"
-              whileTap={{ scale: 0.95 }}
-              className={`px-4 py-2 rounded-full border font-medium transition-all duration-300 ${
-                theme === "dark"
-                  ? "border-slate-700 text-slate-200 hover:bg-slate-800"
-                  : "border-blue-200 text-blue-600 hover:bg-blue-50"
-              }`}
-              aria-label="Login"
-            >
-              {buttonText.login}
-            </motion.button>
-
-            {/* Sign Up Button */}
-            <motion.button
-              variants={buttonHoverVariants}
-              whileHover="hover"
-              whileTap={{ scale: 0.95 }}
-              className={`px-4 py-2 rounded-full border font-medium transition-all duration-300 ${
-                theme === "dark"
-                  ? "border-blue-700 text-blue-400 hover:bg-slate-800"
-                  : "border-blue-300 text-blue-600 hover:bg-blue-50"
-              }`}
-              aria-label="Sign Up"
-            >
-              {buttonText.signup}
-            </motion.button>
-
-            {/* Free Trial Button with Glow Effect */}
-            <motion.button
-              variants={buttonHoverVariants}
-              whileHover="hover"
-              whileTap={{ scale: 0.95 }}
-              className={`relative px-5 py-2 rounded-full font-semibold transition-all duration-300
-                ${theme === "dark"
-                  ? "bg-gradient-to-r from-blue-700 to-blue-500 text-white"
-                  : "bg-gradient-to-r from-blue-600 to-blue-400 text-white"
-                } overflow-hidden group`}
-              aria-label="Start free trial"
-            >
-              {/* Animated background gradient */}
-              <motion.div 
-                className="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                animate={{ 
-                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
-                }}
-                transition={{ 
-                  duration: 5, 
-                  ease: "linear", 
-                  repeat: Infinity 
-                }}
-                style={{ backgroundSize: "200% 200%" }}
-              />
-              
-              {/* Button content */}
-              <span className="relative flex items-center gap-2">
-                <span>{buttonText.trial}</span>
-                <motion.div
-                  animate={{ 
-                    rotate: [0, 10, -10, 0],
-                    scale: [1, 1.1, 1]
-                  }}
-                  transition={{ 
-                    duration: 1.5, 
-                    repeat: Infinity,
-                    repeatType: "loop"
-                  }}
-                >
-                  <Sparkles className="h-4 w-4" />
-                </motion.div>
-              </span>
-              
-              {/* Glow effect */}
-              <motion.div 
-                className="absolute -inset-1 rounded-full blur-md bg-blue-400/30 scale-0 group-hover:scale-100 transition-all duration-300"
-                animate={{ 
-                  opacity: [0.3, 0.6, 0.3]
-                }}
-                transition={{ 
-                  duration: 2, 
-                  repeat: Infinity,
-                  repeatType: "loop"
-                }}
-              />
-            </motion.button>
+            {/* User Button (Login/Signup or User Profile) */}
+            <UserButton theme={theme} language={language} buttonText={buttonText} />
           </div>
 
           {/* Mobile Menu Button */}

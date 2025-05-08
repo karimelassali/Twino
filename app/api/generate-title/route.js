@@ -23,7 +23,7 @@ export async function POST(req) {
             }, { status: 200 });
         }
 
-        const prompt = `Generate a concise, engaging title for a conversation about "${subject}" between ${personalityPair}. Return ONLY the title text without any additional explanation, quotation marks, or formatting. The title should be 3-7 words maximum.`;
+        const prompt = `Generate a concise, engaging title for a conversation about "${subject}" between ${personalityPair}. Return ONLY the title text with required emoji, without any additional explanation, quotation marks, or formatting. The title should be 3-7 words maximum.`;
         
         const result = await generateText({
             model: google('gemini-1.5-flash'),
