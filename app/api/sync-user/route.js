@@ -35,6 +35,15 @@ export async function POST(req) {
         { onConflict: "id" }
       );
 
+    // // Update credits in Supabase users table
+    // const { error: creditsError } = await supabase
+    //   .from("user_credits")
+    //   .insert({
+    //     credits: 1000,
+    //     user_id: userId
+    //   });
+
+    // Handle errors
     if (error) {
       console.error("Error syncing user to Supabase:", error);
       return new Response(JSON.stringify({ success: false, error: error.message }), { 

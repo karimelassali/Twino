@@ -22,10 +22,14 @@ export default function MainInputArea() {
     "Where is Andrew Laeddis Hiding?",
     "Write a Javascript method to reverse a string",
     "How to assemble your own PC?",
+    "Explain quantum computing to a 5-year-old",
+    "What are the ethical implications of AI?",
+    "Debate: Is cereal a soup?",
   ];
 
   const [userData, setUserData] = useState(null);
   const { isLoaded, isSignedIn, user } = useUser();
+  const [userDataDb , setUserDataDb] = useState([]);
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
     setUserData(user);
@@ -34,6 +38,38 @@ export default function MainInputArea() {
   // حالة لتخزين الموضوع والشخصيات المختارة
   const [subject, setSubject] = useState("");
   const [selectedCharacters, setSelectedCharacters] = useState("Historian × Student");
+
+
+
+  // // تحميل بيانات المستخدم من قاعدة البيانات
+  // useEffect(() => {
+  //   if (!isLoaded || !isSignedIn) return; 
+    
+  //   async function fetchUserData() {
+  //     try {
+  //       const { data, error } = await supabase
+  //         .from('users')
+  //         .select('*')
+  //         .eq('id', user.id)
+  //         .single();
+        
+  //       if (error) {
+  //         console.error('Error fetching user data:', error);
+  //         toast.error('Failed to load user data');
+  //         return;
+  //       }
+        
+  //       setUserDataDb(data);
+  //       toast.success('User data loaded successfully');
+  //     } catch (err) {
+  //       console.error('Unexpected error:', err);
+  //       toast.error('An error occurred while loading user data');
+  //     }
+  //   }
+    
+  //   fetchUserData();
+  // }, [isLoaded, isSignedIn, user?.id, supabase]);
+
 
   // خيارات الشخصيات
   const characterOptions = [
@@ -82,6 +118,7 @@ export default function MainInputArea() {
         onChange={handleChange}
         onSubmit={onSubmit}
       />
+      
       {userData && <div className="text-xs mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded">
         <code>User ID: {userData.id}</code>
       </div>}

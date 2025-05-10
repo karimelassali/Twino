@@ -53,6 +53,21 @@ export function AuthSync() {
               last_sign_in: new Date().toISOString(),
             })
             .eq('id', userId);
+            // Update credits in Supabase users table
+
+            const { error: creditsError } = await supabase
+            .from('user_credits')
+            .insert({
+              credits: 1000,
+              user_id: userId
+            });
+
+            if (creditsError) {
+              toast.error('Error updating credits in Supabase..');
+              console.error('Error updating credits in Supabase:', creditsError);
+            } else {
+              console.log('Credits updated in Supabase');
+            }
 
           if (updateError) {
             console.error('Error updating user in Supabase:', updateError);
@@ -75,6 +90,20 @@ export function AuthSync() {
               // Additional fields
               last_sign_in: new Date().toISOString(),
             });
+
+            // Update credits in Supabase users table
+            const { error: creditsError } = await supabase
+              .from('user_credits')
+              .insert({
+                credits: 1000,
+                user_id: userId
+              });
+
+            if (creditsError) {
+              console.error('Error updating credits in Supabase:', creditsError);
+            } else {
+              console.log('Credits updated in Supabase');
+            }
 
           if (insertError) {
             console.error('Error creating user in Supabase:', insertError);
