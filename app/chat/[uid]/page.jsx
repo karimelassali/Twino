@@ -1540,4 +1540,5 @@ export default function TwinoChat({ params }) {
       </div>
     </motion.div>
   );
+  
 }
