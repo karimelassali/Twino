@@ -63,7 +63,7 @@ export default function HeroSectionOne() {
         </div>
         <div className="px-4 py-10 md:py-20">
           <h1 className="relative space-y-2 z-10 mb-10 mx-auto max-w-4xl text-center text-2xl font-ubuntu font-bold text-slate-700 md:text-4xl lg:text-7xl dark:text-slate-300">
-            {"Twino, the AI app that makes two bots talk about any subject"
+            {"Twino helps you chat with two AI minds at once"
               .split(" ")
               .map((word, index) => (
                 <motion.span
@@ -94,7 +94,7 @@ export default function HeroSectionOne() {
             transition={{ duration: 0.3, delay: 0.8 }}
             className="relative z-10 mx-auto max-w-xl py-4 text-center text-lg font-normal text-neutral-600 dark:text-neutral-400"
           >
-            Use Twino to generate a conversation between two bots about any subject. Enter a topic, and watch the bots discuss it live!
+            See two AI personalities talk to each other about any topic you want. Just type what you're interested in and watch them share different viewpoints right away.
           </motion.p>
           <motion.div
             initial={{ opacity: 0 }}
@@ -105,12 +105,12 @@ export default function HeroSectionOne() {
             <button
               className="rounded-md bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-2 font-medium text-white transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-700 hover:to-purple-700"
             >
-              Start Now
+              Try It Free
             </button>
             <button
               className="rounded-md border border-blue-400 bg-white px-6 py-2 font-medium text-gray-800 transition-all duration-300 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-200 dark:border-blue-600 dark:hover:bg-gray-800"
             >
-              Contact Support
+              See Examples
             </button>
           </motion.div>
         </div>
@@ -132,8 +132,8 @@ export default function HeroSectionOne() {
                 <MessageSquare className="h-4 w-4 text-white" />
               </motion.div>
             }
-            title="Dynamic Conversations"
-            description="Generate engaging discussions between two AI bots on any topic you choose."
+            title="Interesting Conversations"
+            description="Watch two AI characters talk with each other and share surprising ideas about any topic you can think of."
           />
           <GridItem
             area="md:[grid-area:1/7/2/13] xl:[grid-area:2/1/3/5]"
@@ -145,8 +145,8 @@ export default function HeroSectionOne() {
                 <Brain className="h-4 w-4 text-white" />
               </motion.div>
             }
-            title="Intelligent AI"
-            description="Powered by advanced AI to deliver natural and insightful bot interactions."
+            title="Smart AI Helpers"
+            description="Uses the newest AI technology to create real-sounding conversations with deep understanding of many topics."
           />
           <GridItem
             area="md:[grid-area:2/1/3/7] xl:[grid-area:1/5/3/8]"
@@ -158,8 +158,8 @@ export default function HeroSectionOne() {
                 <Sliders className="h-4 w-4 text-white" />
               </motion.div>
             }
-            title="Customizable Personalities"
-            description="Select unique bot personalities to tailor the conversation to your preferences."
+            title="Different Characters"
+            description="Pick from types like thinker, scientist, artist, or questioner to create talks that help you see things in new ways."
           />
           <GridItem
             area="md:[grid-area:2/7/3/13] xl:[grid-area:1/8/2/13]"
@@ -171,8 +171,8 @@ export default function HeroSectionOne() {
                 <Sparkles className="h-4 w-4 text-white" />
               </motion.div>
             }
-            title="Creative Insights"
-            description="Unlock creative perspectives as bots explore topics in unexpected ways."
+            title="New Ideas"
+            description="Find fresh thoughts and viewpoints as the AIs work together and disagree, showing you connections and possibilities you might have missed."
           />
           <GridItem
             area="md:[grid-area:3/1/4/13] xl:[grid-area:2/8/3/13]"
@@ -184,8 +184,8 @@ export default function HeroSectionOne() {
                 <Search className="h-4 w-4 text-white" />
               </motion.div>
             }
-            title="Explore Topics"
-            description="Search and discover new subjects for your bots to discuss effortlessly."
+            title="Explore Anything"
+            description="From science to history, current news to creative ideas—our AI friends can talk about any subject you're curious about."
           />
         </motion.ul>
       </div>

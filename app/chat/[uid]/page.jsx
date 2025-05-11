@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import Image from "next/image";
 import { 
   ArrowLeft, RefreshCw, Moon, Sun, Sparkles, 
   Pause, Play, MessageSquare, Square, 
   Clock, Search, LogOut, ChevronRight,
-  Send, Mic, Paperclip, Image, Smile, 
+  Send, Mic, Paperclip, Smile, 
   Download, Share2, Bookmark, Copy, ThumbsUp,
   ThumbsDown, MoreHorizontal, Volume2, VolumeX,
   AlertCircle, CheckCircle, Info, Settings
@@ -30,85 +31,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Progress } from "@/components/ui/progress";
 // Enhanced Twino logo SVG with animated paths
-const TwinoLogo = ({ darkMode }) => {
-  const gradientVariants = {
-    light: {
-      primary: {
-        start: "#4C4CFF",
-        middle: "#7C7CFF",
-        end: "#2A324B"
-      },
-      secondary: {
-        start: "#D0C4FF",
-        middle: "#A090FF",
-        end: "#4C4CFF"
-      }
-    },
-    dark: {
-      primary: {
-        start: "#D0C4FF",
-        middle: "#7C7CFF",
-        end: "#4C4CFF"
-      },
-      secondary: {
-        start: "#FFFFFF",
-        middle: "#D0C4FF",
-        end: "#8080FF"
-      }
-    }
-  };
-
-  const currentGradient = darkMode ? gradientVariants.dark : gradientVariants.light;
-
-  return (
-    <svg width="42" height="42" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <g>
-        <motion.path
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 1.5, ease: "easeInOut" }}
-          d="M75 25C82 30 88 38 85 50C82 62 75 67 75 72C75 77 80 82 75 87C70 92 65 87 65 82C65 77 70 72 70 62C70 52 65 47 65 37C65 27 68 20 75 25Z"
-          stroke={`url(#primaryGradient-${darkMode ? 'dark' : 'light'})`}
-          strokeWidth="4"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <motion.path
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 1.5, delay: 0.3, ease: "easeInOut" }}
-          d="M65 45C60 50 55 50 50 45C45 40 45 35 50 30C55 25 60 25 65 30"
-          stroke={`url(#secondaryGradient-${darkMode ? 'dark' : 'light'})`}
-          strokeWidth="4"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <motion.path
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 1.5, delay: 0.6, ease: "easeInOut" }}
-          d="M35 45C30 50 25 45 25 40C25 35 30 30 35 30C40 30 45 35 40 40"
-          stroke={`url(#secondaryGradient-${darkMode ? 'dark' : 'light'})`}
-          strokeWidth="4"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <defs>
-          <linearGradient id={`primaryGradient-${darkMode ? 'dark' : 'light'}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={currentGradient.primary.start} />
-            <stop offset="50%" stopColor={currentGradient.primary.middle} />
-            <stop offset="100%" stopColor={currentGradient.primary.end} />
-          </linearGradient>
-          <linearGradient id={`secondaryGradient-${darkMode ? 'dark' : 'light'}`} x1="100%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={currentGradient.secondary.start} />
-            <stop offset="50%" stopColor={currentGradient.secondary.middle} />
-            <stop offset="100%" stopColor={currentGradient.secondary.end} />
-          </linearGradient>
-        </defs>
-      </g>
-    </svg>
-  );
-};
 
 // Enhanced glass effect component with reactive animations
 const GlassEffect = ({ children, active = false, darkMode = false, blur = 8, opacity = 0.7, isAsker = false, isResponder = false }) => {
@@ -460,7 +382,7 @@ export default function TwinoChat({ params }) {
           
           setUserCredits(data);
           console.log('User credits:', data);
-          toast.success('User credits loaded successfully');
+          // toast.success('User credits loaded successfully');
         } catch (err) {
           console.error('Unexpected error:', err);
           toast.error('An error occurred while loading user credits');
@@ -608,7 +530,7 @@ export default function TwinoChat({ params }) {
           .from("messages")
           .select("*")
           .eq("conversation_id", uid)
-          .order("created_at", { ascending: true });
+          
         
         if (messagesError) {
           console.error("Error fetching messages:", messagesError);
@@ -1365,7 +1287,7 @@ export default function TwinoChat({ params }) {
               whileHover={{ rotate: 360 }}
               transition={{ duration: 0.8, ease: "easeInOut" }}
             >
-              <TwinoLogo darkMode={darkMode} />
+              <Image src="/twino.png" alt="Twino Logo" className="w-8 h-8 rounded-full" width={32} height={32} />
             </motion.div>
             <motion.h1 
               className="text-xl font-bold tracking-tight"
@@ -1982,7 +1904,7 @@ export default function TwinoChat({ params }) {
                               }} />
                             </motion.button>
                             
-                            <motion.button
+                            {/* <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
                               className="p-1.5 rounded-full"
@@ -1996,7 +1918,7 @@ export default function TwinoChat({ params }) {
                               title={isSpeaking ? "Stop speaking" : "Speak message"}
                             >
                               <Volume2 size={14} style={{ color: darkMode ? '#D0C4FF' : '#4C4CFF' }} />
-                            </motion.button>
+                            </motion.button> */}
                             
                             <motion.button
                               whileHover={{ scale: 1.1 }}
