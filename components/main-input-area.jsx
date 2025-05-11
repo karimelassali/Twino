@@ -136,6 +136,7 @@ export default function MainInputArea() {
           >
           </motion.div>
         )} */}
+        
       </motion.div>
     </div>
   );
