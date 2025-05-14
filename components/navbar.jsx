@@ -103,6 +103,14 @@ export default function Navbar() {
     }
   }[language];
 
+  // We're no longer closing the menu on auth button clicks
+  // This function is kept but modified to do nothing, 
+  // we'll only keep it for the free trial button
+  const handleFreeTrialButtonClick = () => {
+    // Only the free trial button will close the mobile menu
+    setMobileMenuOpen(false);
+  };
+
   // Variants for animations
   const buttonHoverVariants = {
     hover: { 
@@ -384,6 +392,7 @@ export default function Navbar() {
                         onClick={() => {
                           setLanguage(code);
                           setLangDropdownOpen(false);
+                          // Don't close mobile menu when changing language
                         }}
                         className={`w-full text-left px-4 py-2 flex items-center gap-2 text-sm font-medium
                           ${language === code 
@@ -444,14 +453,15 @@ export default function Navbar() {
               duration: 0.4, 
               ease: [0.04, 0.62, 0.23, 0.98] 
             }}
-            className={`md:hidden fixed inset-0 top-16 ${
+            className={`md:hidden Z-50 fixed inset-0 top-16 ${
               theme === "dark" 
                 ? "bg-slate-900/95 backdrop-blur-md" 
                 : "bg-white/95 backdrop-blur-md"
             } shadow-xl z-40`}
           >
             <div className={`flex flex-col gap-4 p-5 ${language === "ar" ? "items-end" : ""}`}>
-              <motion.button
+              <motion.a
+              href="/sign-in"
                 initial={{ opacity: 0, x: language === "ar" ? 20 : -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
@@ -462,12 +472,13 @@ export default function Navbar() {
                     : "border-blue-200 text-blue-600 hover:bg-blue-50"
                 } transition-all duration-300`}
                 aria-label="Login"
-                onClick={() => setMobileMenuOpen(false)}
+                // Login a - don't close menu
               >
                 {buttonText.login}
-              </motion.button>
+              </motion.a>
               
-              <motion.button
+              <motion.a
+                href="/sign-up"
                 initial={{ opacity: 0, x: language === "ar" ? 20 : -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
@@ -478,10 +489,10 @@ export default function Navbar() {
                     : "border-blue-300 text-blue-600 hover:bg-blue-50"
                 } transition-all duration-300`}
                 aria-label="Sign Up"
-                onClick={() => setMobileMenuOpen(false)}
+                // Signup button - don't close menu
               >
                 {buttonText.signup}
-              </motion.button>
+              </motion.a>
               
               <motion.button
                 initial={{ opacity: 0, x: language === "ar" ? 20 : -20 }}
@@ -494,7 +505,7 @@ export default function Navbar() {
                     : "bg-gradient-to-r from-blue-600 to-blue-400 text-white"
                   } overflow-hidden group`}
                 aria-label="Start free trial"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={handleFreeTrialButtonClick}
               >
                 {/* Gradient background animation */}
                 <motion.div 
