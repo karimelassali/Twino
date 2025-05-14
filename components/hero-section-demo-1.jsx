@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { HeroHighlight, Highlight } from "@/components/ui/hero-highlight";
+import  NewfeaturePopover  from "@/components/new-feature";
 
 const GridItem = ({ area, icon, title, description }) => {
   return (
@@ -102,16 +103,18 @@ export default function HeroSectionOne() {
             transition={{ duration: 0.3, delay: 1 }}
             className="relative z-10 mt-8 flex flex-wrap items-center justify-center gap-4"
           >
-            <button
+            <a
+              href="#topics"
               className="rounded-md bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-2 font-medium text-white transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-700 hover:to-purple-700"
             >
               Try It Free
-            </button>
-            <button
+            </a>
+            {/* <button
               className="rounded-md border border-blue-400 bg-white px-6 py-2 font-medium text-gray-800 transition-all duration-300 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-200 dark:border-blue-600 dark:hover:bg-gray-800"
             >
               See Examples
-            </button>
+            </button> */}
+            <NewfeaturePopover className title="New Feature"/>
           </motion.div>
         </div>
       </div>

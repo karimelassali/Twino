@@ -36,7 +36,7 @@ export default function ExploreTopics() {
   }, []);
 
   return (
-    <section className="py-12 max-sm:mt-100 px-4 md:px-6 relative">
+    <section id='topics' className="py-12 max-sm:mt-100 px-4 md:px-6 relative">
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

@@ -157,7 +157,7 @@ export default function CharacterSelect({ selectedCharacter, onCharacterSelect }
   }, [isOpen]);
 
   return (
-    <div className="relative w-full max-w-md mx-auto mt-6 z-50">
+    <div className="relative w-full max-w-md mx-auto mt-6 z-40">
       {/* Selected value button */}
       <motion.button
         onClick={(e) => {

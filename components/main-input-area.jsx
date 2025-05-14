@@ -122,6 +122,7 @@ export default function MainInputArea() {
         
         {/* Character selection dropdown */}
         <CharacterSelect 
+        
           selectedCharacter={selectedCharacters}
           onCharacterSelect={handleCharacterSelect}
         />

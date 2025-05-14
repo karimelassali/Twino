@@ -5,6 +5,9 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Sun, Moon, ChevronDown, Globe } from "lucide-react";
 import { UserButton } from "./user-button";
+import { SignedIn, SignedOut , useUser} from "@clerk/nextjs";
+
+
 
 // Custom hook for persisting state in localStorage
 function useLocalStorage(key, initialValue) {
@@ -47,6 +50,8 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const {user} = useUser();
+
   
   // Local storage for theme and language
   const [theme, setTheme] = useLocalStorage("theme", "light");
@@ -453,48 +458,63 @@ export default function Navbar() {
               duration: 0.4, 
               ease: [0.04, 0.62, 0.23, 0.98] 
             }}
-            className={`md:hidden Z-50 fixed inset-0 top-16 ${
+            className={`md:hidden fixed inset-0 top-16 ${
               theme === "dark" 
                 ? "bg-slate-900/95 backdrop-blur-md" 
                 : "bg-white/95 backdrop-blur-md"
             } shadow-xl z-40`}
           >
-            <div className={`flex flex-col gap-4 p-5 ${language === "ar" ? "items-end" : ""}`}>
-              <motion.a
-              href="/sign-in"
-                initial={{ opacity: 0, x: language === "ar" ? 20 : -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 }}
-                whileHover={{ x: language === "ar" ? -5 : 5, backgroundColor: theme === "dark" ? "#334155" : "#EFF6FF" }}
-                className={`px-4 py-3 rounded-xl border font-medium w-full text-left ${
-                  theme === "dark"
-                    ? "border-slate-700 text-slate-200 hover:bg-slate-800"
-                    : "border-blue-200 text-blue-600 hover:bg-blue-50"
-                } transition-all duration-300`}
-                aria-label="Login"
-                // Login a - don't close menu
-              >
-                {buttonText.login}
-              </motion.a>
+            <div className={`flex flex-col gap-4  z-90 bg-white dark:bg-slate-800 h-full  p-5 ${language === "ar" ? "items-end" : ""}`}>
+              <SignedOut>
+                <motion.a
+                  href="/sign-in"
+                  initial={{ opacity: 0, x: language === "ar" ? 20 : -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 }}
+                  whileHover={{ x: language === "ar" ? -5 : 5, backgroundColor: theme === "dark" ? "#334155" : "#EFF6FF" }}
+                  className={`px-4 py-3 rounded-xl border font-medium w-full text-left ${
+                    theme === "dark"
+                      ? "border-slate-700 text-slate-200 hover:bg-slate-800"
+                      : "border-blue-200 text-blue-600 hover:bg-blue-50"
+                  } transition-all duration-300`}
+                  aria-label="Login"
+                >
+                  {buttonText.login}
+                </motion.a>
+                
+                <motion.a
+                  href="/sign-up"
+                  initial={{ opacity: 0, x: language === "ar" ? 20 : -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                  whileHover={{ x: language === "ar" ? -5 : 5, backgroundColor: theme === "dark" ? "#334155" : "#EFF6FF" }}
+                  className={`px-4 py-3 rounded-xl border font-medium w-full text-left ${
+                    theme === "dark"
+                      ? "border-blue-700 text-blue-400 hover:bg-slate-800"
+                      : "border-blue-300 text-blue-600 hover:bg-blue-50"
+                  } transition-all duration-300`}
+                  aria-label="Sign Up"
+                >
+                  {buttonText.signup}
+                </motion.a>
+              </SignedOut>
+              
+              <SignedIn>
+                <div className="w-full flex justify-end items-center mb-2 px-2">
+                  <div className={`flex items-center gap-3 w-full justify-between ${language === "ar" ? "flex-row-reverse" : ""}`}>
+                    <p className={`text-sm font-medium ${
+                      theme === "dark" ? "text-white" : "text-gray-700"
+                    }`}>
+                      Hello, <span className="font-semibold text-blue-500">{useUser().user?.firstName || 'User'}</span>!
+                    </p>
+                    <UserButton theme={theme} language={language} buttonText={buttonText} />
+                  </div>
+                </div>
+              </SignedIn>
               
               <motion.a
-                href="/sign-up"
-                initial={{ opacity: 0, x: language === "ar" ? 20 : -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-                whileHover={{ x: language === "ar" ? -5 : 5, backgroundColor: theme === "dark" ? "#334155" : "#EFF6FF" }}
-                className={`px-4 py-3 rounded-xl border font-medium w-full text-left ${
-                  theme === "dark"
-                    ? "border-blue-700 text-blue-400 hover:bg-slate-800"
-                    : "border-blue-300 text-blue-600 hover:bg-blue-50"
-                } transition-all duration-300`}
-                aria-label="Sign Up"
-                // Signup button - don't close menu
-              >
-                {buttonText.signup}
-              </motion.a>
-              
-              <motion.button
+                href='#topics'
+
                 initial={{ opacity: 0, x: language === "ar" ? 20 : -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 }}
@@ -537,7 +557,7 @@ export default function Navbar() {
                 >
                   <Sparkles className="h-4 w-4" />
                 </motion.div>
-              </motion.button>
+              </motion.a>
             </div>
           </motion.div>
         )}

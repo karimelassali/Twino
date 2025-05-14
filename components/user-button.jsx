@@ -24,6 +24,7 @@ const buttonHoverVariants = {
 };
 
 export function UserButton({ theme, language, buttonText }) {
+  const { user } = useUser();
   return (
     <div className={`flex items-center gap-3 ${language === "ar" ? "flex-row-reverse" : ""}`}>
       <SignedIn>
@@ -32,7 +33,9 @@ export function UserButton({ theme, language, buttonText }) {
             <p className={`text-sm font-medium ${
               theme === "dark" ? "text-white" : "text-gray-700"
             }`}>
-              <span className="text-sm font-medium">Account</span>
+              <span className="text-sm font-medium">
+                {user?.fullName ? `Hello, ${user.fullName}` : 'Welcome back!'}
+              </span>
             </p>
           </div>
           <ClerkUserButton 
