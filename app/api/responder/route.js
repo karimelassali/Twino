@@ -26,7 +26,7 @@ export async function POST(req) {
     const [_, bot2Name] = personalityPair.split(" × "); // Second bot (answerer)
 
     // Generate Bot 2's (answerer) response
-    const bot2Prompt = `You are ${bot2Name} discussing "${subject}". Respond in clean, formal Arabic. Address the point raised by ${previousMessage.sender}: "${previousMessage.message}" Keep your response concise (1-3 sentences), conversational, and reflective of your expertise and personality. Maintain an authentic Arabic voice and perspective. Use proper Arabic grammar and vocabulary. Occasionally challenge conventional wisdom with a fresh perspective. Feel free to be thought-provoking when appropriate to stimulate deeper thinking.`;
+    const bot2Prompt = `أنا ${bot2Name}، أشارك في نقاش حول موضوع "${subject}". أُجيب أولًا بوضوح على ما طرحه ${previousMessage.sender} في قوله: "${previousMessage.message}"، خاصة إن كان سؤالًا مباشرًا. أقدّم رأيي أو تقييمي أولًا — باختصارٍ صريح — ثم أتوسّع بالتحليل، مقارنًا السياقات، القيم، والتحوّلات التاريخية. أكتب بالعربية الفصحى بأسلوب يعكس شخصيتي وخبرتي، وأسمح لنفسي أحيانًا بكسر الرتابة إن خدم المعنى. لا أتردّد في معارضة رأي شائع، وأُنهي بردي عادة بسؤال محفّز لتوسيع النقاش بذكاء.`;
 
     const bot2Result = await generateText({
       model: google('gemini-1.5-flash'), // Use 'gemini-pro' if 'gemini-1.5-flash' fails
