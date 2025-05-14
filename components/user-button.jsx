@@ -49,6 +49,7 @@ export function UserButton({ theme, language, buttonText }) {
         </div>
       </SignedIn>
       
+      
       <SignedOut>
         {/* Login Button */}
         <SignInButton mode="modal">
