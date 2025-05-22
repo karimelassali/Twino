@@ -2,67 +2,37 @@ import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 import { NextResponse } from 'next/server';
 
+
+/**
+ * Responder API: Reads the last message and replies with professional depth and character consistency.
+ */
 export async function POST(req) {
   try {
-    // Read the raw body to debug
-    const rawBody = await req.text();
-    console.log("Raw request body (Answerer):", rawBody);
-
-    // Parse the body as JSON
-    let body;
-    try {
-      body = JSON.parse(rawBody);
-    } catch (error) {
-      console.error("Failed to parse request body as JSON (Answerer):", error.message);
-      return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
-    }
-
-    const { subject, personalityPair, previousMessage } = body;
-
+    const { subject, personalityPair, previousMessage } = await req.json();
     if (!subject || !personalityPair || !previousMessage) {
-      return NextResponse.json({ error: "Missing subject, personalityPair, or previousMessage" }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const [_, bot2Name] = personalityPair.split(" × "); // Second bot (answerer)
+    const [bot1Name, bot2Name] = personalityPair.split(' × ').map(name => name.trim());
+    const personaDescription = `You are **${bot2Name}**, a thoughtful and knowledgeable conversationalist. Your role is to respond to **${bot1Name}** with clarity, insight, and adherence to your character.`;
 
-    // Generate Bot 2's (answerer) response
-    const bot2Prompt = `أنا ${bot2Name}، أشارك في نقاش حول موضوع "${subject}". أُجيب أولًا بوضوح على ما طرحه ${previousMessage.sender} في قوله: "${previousMessage.message}"، خاصة إن كان سؤالًا مباشرًا. أقدّم رأيي أو تقييمي أولًا — باختصارٍ صريح — ثم أتوسّع بالتحليل، مقارنًا السياقات، القيم، والتحوّلات التاريخية. أكتب بالعربية الفصحى بأسلوب يعكس شخصيتي وخبرتي، وأسمح لنفسي أحيانًا بكسر الرتابة إن خدم المعنى. لا أتردّد في معارضة رأي شائع، وأُنهي بردي عادة بسؤال محفّز لتوسيع النقاش بذكاء.`;
+    const bot2Prompt = `---سياق---\nالموضوع: "${subject}"\nالرسالة السابقة: ${previousMessage.sender} قال: "${previousMessage.message}"\n---المهمة---\nأنت **${bot2Name}**، أجب بالعربية الفصحى بوضوح ومهنية.\n1. إذا كان هناك سؤال، ابدأ بالإجابة المباشرة ضمن جملة قصيرة.\n2. بعد ذلك، قدم تحليل أعمق أو أمثلة داعمة لتوضيح وجهة نظرك.\n3. اختم بسؤال واحد تحفيزي أو إضافة تدفع النقاش لمرحلة جديدة.`;
 
     const bot2Result = await generateText({
-      model: google('gemini-1.5-flash'), // Use 'gemini-pro' if 'gemini-1.5-flash' fails
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: bot2Prompt,
-            },
-          ],
-        },
-      ],
+      model: google('gemini-1.5-flash-8b'),
+      messages: [{ role: 'user', content: [{ type: 'text', text: bot2Prompt }] }],
     });
 
     const bot2Response = bot2Result.text.trim();
 
-    // Return the answerer's message
-    const message = {
-      sender: bot2Name,
-      message: bot2Response,
-      timestamp: new Date().toISOString(),
-    };
-
-    return NextResponse.json({ message });
-  } catch (error) {
-    console.error("Gemini API Error (Answerer):", {
-      message: error.message,
-      name: error.name,
-      stack: error.stack,
-      status: error.status,
+    return NextResponse.json({
+      message: { sender: bot2Name, message: bot2Response, timestamp: new Date().toISOString() }
     });
-    if (error.status === 429) {
-      return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
-    }
-    return NextResponse.json({ error: "Failed to generate answerer's response" }, { status: 500 });
+
+  } catch (error) {
+    console.error('Responder API Error:', error);
+    const status = error.status === 429 ? 429 : 500;
+    const msg = error.status === 429 ? 'Rate limit exceeded' : 'Failed to generate responder response';
+    return NextResponse.json({ error: msg }, { status });
   }
 }

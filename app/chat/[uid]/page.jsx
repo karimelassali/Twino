@@ -270,7 +270,7 @@ export default function TwinoChat({ params }) {
   const [darkMode, setDarkMode] = useState(false);
   const [conversation, setConversation] = useState([]);
   const [thinkingPersona, setThinkingPersona] = useState(null);
-  const [readingPersona, setReadingPersona] = useState(null);
+  const [readingPersona, setReadingPersona] = useState(null); 
   const [selectedPersonality, setSelectedPersonality] = useState(botPersonalities[0].pair);
   const [selectedTopic, setSelectedTopic] = useState("");
   const [showHistoryPanel, setShowHistoryPanel] = useState(true);
