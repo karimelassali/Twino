@@ -8,44 +8,34 @@ import {
     PopoverFormSuccess,
   } from "@/components/ui/popover-form"
   import { useState, useEffect } from "react"
+  import { useForm, ValidationError } from '@formspree/react';
+
   
   export default function NewfeaturePopover() {
-    const [formState, setFormState] = useState("idle")
     const [open, setOpen] = useState(false)
-    const [feedback, setFeedback] = useState("")
-  
-    function submit() {
-      setFormState("loading")
-      setTimeout(() => {
-        setFormState("success")
-      }, 1500)
-  
-      setTimeout(() => {
-        setOpen(false)
-        setFormState("idle")
-        setFeedback("")
-      }, 3300)
+    const [state, handleSubmit] = useForm("manjavgy");
+    
+    if (state.succeeded) {
+      return (
+        <div className="flex items-center justify-center">
+          <PopoverForm
+            title="New Feature?"
+            open={open}
+            setOpen={setOpen}
+            width="364px"
+            height="192px"
+            showCloseButton={false}
+            showSuccess={true}
+            successChild={
+              <PopoverFormSuccess
+                title="Request Received"
+                description="Thank you for supporting our project!"
+              />
+            }
+          />
+        </div>
+      );
     }
-  
-    useEffect(() => {
-      const handleKeyDown = (event) => {
-        if (event.key === "Escape") {
-          setOpen(false)
-        }
-  
-        if (
-          (event.ctrlKey || event.metaKey) &&
-          event.key === "Enter" &&
-          open &&
-          formState === "idle"
-        ) {
-          submit()
-        }
-      }
-  
-      window.addEventListener("keydown", handleKeyDown)
-      return () => window.removeEventListener("keydown", handleKeyDown)
-    }, [open, formState])
   
     return (
       <div className="flex items-center justify-center">
@@ -55,24 +45,25 @@ import {
           setOpen={setOpen}
           width="364px"
           height="192px"
-          showCloseButton={formState !== "success"}
-          showSuccess={formState === "success"}
+          showCloseButton={true}
+          showSuccess={false}
           openChild={
             <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                if (!feedback) return
-                submit()
-              }}
+              onSubmit={handleSubmit}
             >
               <div className="relative">
                 <textarea
+                  id="message"
+                  name="message"
                   autoFocus
                   placeholder="New Feature Description..."
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
                   className="h-32 w-full resize-none rounded-t-lg p-3 text-sm outline-none"
                   required
+                />
+                <ValidationError 
+                  prefix="Message" 
+                  field="message"
+                  errors={state.errors}
                 />
               </div>
               <div className="relative flex h-12 items-center px-[10px]">
@@ -83,18 +74,17 @@ import {
                 <div className="absolute right-0 top-0 translate-x-[1.5px] -translate-y-1/2 rotate-180">
                   <PopoverFormCutOutRightIcon />
                 </div>
-                <PopoverFormButton loading={formState === "loading"} />
+                <button 
+                  type="submit" 
+                  disabled={state.submitting}
+                  className="flex items-center justify-center rounded-md bg-black px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-black/80 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  {state.submitting ? 'Submitting...' : 'Submit'}
+                </button>
               </div>
             </form>
-          }
-          successChild={
-            <PopoverFormSuccess
-              title="Request Received"
-              description="Thank you for supporting our project!"
-            />
           }
         />
       </div>
     )
   }
-  

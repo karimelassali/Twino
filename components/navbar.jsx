@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Sun, Moon, ChevronDown, Globe } from "lucide-react";
 import { UserButton } from "./user-button";
 import { SignedIn, SignedOut , useUser} from "@clerk/nextjs";
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
 
 
 
@@ -52,6 +54,12 @@ export default function Navbar() {
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const {user} = useUser();
 
+  const driverObj = driver({
+    popoverClass: 'driverjs-theme'
+  });
+
+  
+  
   
   // Local storage for theme and language
   const [theme, setTheme] = useLocalStorage("theme", "light");
@@ -245,7 +253,7 @@ export default function Navbar() {
           </motion.a>
 
           {/* Desktop Navigation */}
-          <div className={`hidden md:flex items-center gap-3 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+          <div id="test" className={`hidden md:flex items-center gap-3 ${language === "ar" ? "flex-row-reverse" : ""}`}>
             {/* Theme Toggle */}
             <motion.button
               variants={buttonHoverVariants}
@@ -279,7 +287,7 @@ export default function Navbar() {
             </motion.button>
 
             {/* Language Selector */}
-            <div className="relative">
+            {/* <div className="relative">
               <motion.button
                 variants={buttonHoverVariants}
                 whileHover="hover"
@@ -339,7 +347,7 @@ export default function Navbar() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </div> */}
 
             {/* User Button (Login/Signup or User Profile) */}
             <UserButton theme={theme} language={language} buttonText={buttonText} />
@@ -366,57 +374,57 @@ export default function Navbar() {
             </motion.button>
 
             {/* Language Toggle Mobile - Icon Only */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setLangDropdownOpen(!langDropdownOpen)}
-              className={`p-2 rounded-full relative ${
-                theme === "dark" 
-                  ? "bg-slate-800 text-white" 
-                  : "bg-blue-50 text-blue-800"
-              } transition-all duration-300`}
-              aria-label="Change language"
-            >
-              <Globe size={18} />
-              
-              <AnimatePresence>
-                {langDropdownOpen && (
-                  <motion.div
-                    variants={dropdownVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="hidden"
-                    className={`absolute top-full mt-2 ${language === "ar" ? "right-0" : "left-0"} min-w-[140px] rounded-xl overflow-hidden z-50
-                      ${theme === "dark" 
-                        ? "bg-slate-800 border border-slate-700 shadow-lg shadow-slate-900/30" 
-                        : "bg-white border border-blue-100 shadow-lg shadow-blue-100/50"
-                      }`}
-                  >
-                    {Object.entries(languageLabels).map(([code, label]) => (
-                      <motion.button
-                        key={code}
-                        onClick={() => {
-                          setLanguage(code);
-                          setLangDropdownOpen(false);
-                          // Don't close mobile menu when changing language
-                        }}
-                        className={`w-full text-left px-4 py-2 flex items-center gap-2 text-sm font-medium
-                          ${language === code 
-                            ? theme === "dark" 
-                              ? "bg-slate-700 text-blue-400" 
-                              : "bg-blue-50 text-blue-600"
-                            : theme === "dark"
-                              ? "text-slate-200 hover:bg-slate-700" 
-                              : "text-slate-700 hover:bg-blue-50"
-                          } transition-colors duration-200`}
-                        whileHover={{ x: language === "ar" ? -5 : 5 }}
-                      >
-                        <span>{label}</span>
-                      </motion.button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.button>
+              {/* <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+                className={`p-2 rounded-full relative ${
+                  theme === "dark" 
+                    ? "bg-slate-800 text-white" 
+                    : "bg-blue-50 text-blue-800"
+                } transition-all duration-300`}
+                aria-label="Change language"
+              >
+                <Globe size={18} />
+                
+                <AnimatePresence>
+                  {langDropdownOpen && (
+                    <motion.div
+                      variants={dropdownVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="hidden"
+                      className={`absolute top-full mt-2 ${language === "ar" ? "right-0" : "left-0"} min-w-[140px] rounded-xl overflow-hidden z-50
+                        ${theme === "dark" 
+                          ? "bg-slate-800 border border-slate-700 shadow-lg shadow-slate-900/30" 
+                          : "bg-white border border-blue-100 shadow-lg shadow-blue-100/50"
+                        }`}
+                    >
+                      {Object.entries(languageLabels).map(([code, label]) => (
+                        <motion.button
+                          key={code}
+                          onClick={() => {
+                            setLanguage(code);
+                            setLangDropdownOpen(false);
+                            // Don't close mobile menu when changing language
+                          }}
+                          className={`w-full text-left px-4 py-2 flex items-center gap-2 text-sm font-medium
+                            ${language === code 
+                              ? theme === "dark" 
+                                ? "bg-slate-700 text-blue-400" 
+                                : "bg-blue-50 text-blue-600"
+                              : theme === "dark"
+                                ? "text-slate-200 hover:bg-slate-700" 
+                                : "text-slate-700 hover:bg-blue-50"
+                            } transition-colors duration-200`}
+                          whileHover={{ x: language === "ar" ? -5 : 5 }}
+                        >
+                          <span>{label}</span>
+                        </motion.button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.button> */}
 
             {/* Hamburger Icon */}
             <motion.button
