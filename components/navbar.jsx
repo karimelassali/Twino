@@ -84,6 +84,22 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Lock body scroll when menu open and close on Escape key
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => {
+      window.removeEventListener('keydown', handleEsc);
+    };
+  }, [mobileMenuOpen]);
+
   // Language label mapping
   const languageLabels = {
     en: "English",
@@ -430,20 +446,18 @@ export default function Navbar() {
             {/* Hamburger Icon */}
             <motion.button
               whileTap={{ scale: 0.9 }}
-              onClick={() => {
-                setMobileMenuOpen(prev => !prev);
-                if(!mobileMenuOpen){
-                  document.body.style.overflow='hidden';
-                } else {
-                  document.body.style.overflow='auto';
+              onClick={() => setMobileMenuOpen(prev => !prev)}
+              className="p-2 rounded-full z-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+              aria-label="Toggle menu" aria-expanded={mobileMenuOpen} aria-controls="primary-navigation"
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setMobileMenuOpen(false);
                 }
               }}
-              className="p-2 rounded-full z-50"
-              aria-label="Toggle menu"
             >
               <div className="w-6 flex flex-col gap-1.5">
                 <motion.div
-                  animate={mobileMenuOpen ? { rotate: 45, y: 8, backgroundColor: theme === "dark" ? "#60A5FA" : "#3B82F6" } : { rotate: 0, y: 0 }}
+                   animate={mobileMenuOpen ? { rotate: 45, y: 8, backgroundColor: theme === "dark" ? "#60A5FA" : "#3B82F6" } : { rotate: 0, y: 0 }}
                   transition={{ duration: 0.3 }}
                   className={`h-0.5 w-full ${theme === "dark" ? "bg-white" : "bg-gray-800"}`}
                 />

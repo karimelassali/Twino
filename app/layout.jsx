@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { ClerkProvider } from '@clerk/nextjs';
 import { AuthSyncProvider } from '@/components/auth-sync-provider';
 import Navbar from "@/components/navbar";
+import Footer from "@/components/footer";
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
@@ -46,11 +47,14 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html className="h-full" lang="en">
-        <body className={`${inter.className} h-full`}>
+        <body className={`${inter.className} flex flex-col min-h-screen`}>
           <AuthSyncProvider>
-            {children}
+            <Navbar />
+            <main className="flex-grow">
+              {children}
+            </main>
+            <Footer />
           </AuthSyncProvider>
-          
           <Toaster />
         </body>
       </html>

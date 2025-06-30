@@ -14,9 +14,16 @@ export async function POST(req) {
     }
 
     const [bot1Name, bot2Name] = personalityPair.split(' × ').map(name => name.trim());
+    
+    // Detect language from the previous message (simple detection based on Arabic characters)
+    const isArabic = /[\u0600-\u06FF]/.test(previousMessage.message);
+    const language = isArabic ? 'Arabic' : 'English';
+    
     const personaDescription = `You are **${bot2Name}**, a thoughtful and knowledgeable conversationalist. Your role is to respond to **${bot1Name}** with clarity, insight, and adherence to your character.`;
 
-    const bot2Prompt = `---سياق---\nالموضوع: "${subject}"\nالرسالة السابقة: ${previousMessage.sender} قال: "${previousMessage.message}"\n---المهمة---\nأنت **${bot2Name}**، أجب بالعربية الفصحى بوضوح ومهنية.\n1. إذا كان هناك سؤال، ابدأ بالإجابة المباشرة ضمن جملة قصيرة.\n2. بعد ذلك، قدم تحليل أعمق أو أمثلة داعمة لتوضيح وجهة نظرك.\n3. اختم بسؤال واحد تحفيزي أو إضافة تدفع النقاش لمرحلة جديدة.`;
+    const bot2Prompt = isArabic 
+      ? `---Context---\nTopic: "${subject}"\nPrevious Message: ${previousMessage.sender} said: "${previousMessage.message}"\n---Task---\nYou are **${bot2Name}**, respond in ${language} clearly and professionally.\n1. If there's a question, start with a direct answer in a short sentence.\n2. Then, provide deeper analysis or supporting examples to clarify your perspective.\n3. Conclude with one thought-provoking question or addition that moves the discussion forward.`
+      : `---سياق---\nالموضوع: "${subject}"\nالرسالة السابقة: ${previousMessage.sender} قال: "${previousMessage.message}"\n---المهمة---\nأنت **${bot2Name}**، أجب باللغة العربية الفصحى بوضوح ومهنية.\n1. إذا كان هناك سؤال، ابدأ بالإجابة المباشرة ضمن جملة قصيرة.\n2. بعد ذلك، قدم تحليل أعمق أو أمثلة داعمة لتوضيح وجهة نظرك.\n3. اختم بسؤال واحد تحفيزي أو إضافة تدفع النقاش لمرحلة جديدة.`;
 
     const bot2Result = await generateText({
       model: google('gemini-1.5-flash-8b'),
