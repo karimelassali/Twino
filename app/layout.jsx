@@ -47,8 +47,10 @@ export default function RootLayout({
     <ClerkProvider>
       <html className="h-full" lang="en">
         <body className={`${inter.className} h-full`}>
-          <AuthSyncProvider />
-          {children}
+          <AuthSyncProvider>
+            {children}
+          </AuthSyncProvider>
+          
           <Toaster />
         </body>
       </html>

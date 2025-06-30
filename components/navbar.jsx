@@ -157,7 +157,8 @@ export default function Navbar() {
   };
 
   return (
-    <motion.header 
+    <motion.header
+      role="banner"
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ 
@@ -429,7 +430,14 @@ export default function Navbar() {
             {/* Hamburger Icon */}
             <motion.button
               whileTap={{ scale: 0.9 }}
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={() => {
+                setMobileMenuOpen(prev => !prev);
+                if(!mobileMenuOpen){
+                  document.body.style.overflow='hidden';
+                } else {
+                  document.body.style.overflow='auto';
+                }
+              }}
               className="p-2 rounded-full z-50"
               aria-label="Toggle menu"
             >

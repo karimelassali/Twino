@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import FirstUserModal from '@/components/first-user-modal';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { createClient } from '@/utils/supabase/client';
 import toast from 'react-hot-toast';
@@ -9,10 +10,28 @@ import toast from 'react-hot-toast';
  * Provider component that syncs Clerk user data with Supabase
  * This runs whenever authentication state changes
  */
-export function AuthSyncProvider() {
+export function AuthSyncProvider({ children }) {
   const { isLoaded, userId } = useAuth();
   const { user } = useUser();
   const [synced, setSynced] = useState(false);
+  const [showEarlyModal, setShowEarlyModal] = useState(false);
+
+  // Show the confetti modal only once per browser
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const flag = localStorage.getItem('twino_credits_modal');
+      if (!flag) {
+        setShowEarlyModal(true);
+      }
+    }
+  }, []);
+
+  const handleModalChange = (open) => {
+    setShowEarlyModal(open);
+    if (!open) {
+      localStorage.setItem('twino_credits_modal', 'shown');
+    }
+  };
   
   useEffect(() => {
     // Only run if Clerk has loaded and user is signed in
@@ -113,7 +132,6 @@ export function AuthSyncProvider() {
             console.log('User already has credits, no update necessary');
           }
         }
-        
         // Mark as synced for this session
         setSynced(true);
       } catch (error) {
@@ -127,5 +145,12 @@ export function AuthSyncProvider() {
   }, [isLoaded, userId, user, synced]);
 
   // This is a background component, doesn't render anything
-  return null;
+  return (
+    <>
+      {children}
+      {showEarlyModal && (
+        <FirstUserModal open={showEarlyModal} onOpenChange={handleModalChange} />
+      )}
+    </>
+  );
 }
