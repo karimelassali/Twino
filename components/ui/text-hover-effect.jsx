@@ -2,10 +2,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { motion } from "motion/react";
 
-export const TextHoverEffect = ({
-  text,
-  duration
-}) => {
+export default function TextHoverEffect ({ text, duration}) {
   const svgRef = useRef(null);
   const [cursor, setCursor] = useState({ x: 0, y: 0 });
   const [hovered, setHovered] = useState(false);
@@ -88,7 +85,7 @@ export const TextHoverEffect = ({
         textAnchor="middle"
         dominantBaseline="middle"
         strokeWidth="0.3"
-        className="fill-transparent stroke-neutral-200 font-[helvetica] text-7xl font-bold dark:stroke-neutral-800"
+        className="fill-transparent stroke-neutral-400 font-[helvetica] text-7xl font-bold dark:stroke-neutral-300"
         initial={{ strokeDashoffset: 1000, strokeDasharray: 1000 }}
         animate={{
           strokeDashoffset: 0,

@@ -2,7 +2,11 @@
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
-import { TextHoverEffect } from "@/components/ui/text-hover-effect";
+import dynamic from "next/dynamic";
+
+const TextHoverEffect = dynamic(() => import("@/components/ui/text-hover-effect"), {
+  ssr: false,
+});
 
 export default function Footer() {
   const containerVariants = {
@@ -28,7 +32,7 @@ export default function Footer() {
       transition={{ duration: 0.7 }}
       className="bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 border-t border-gray-200 dark:border-gray-800 py-12 mt-16 overflow-hidden"
     >
-      <TextHoverEffect  duration={0.9} text={'Twino'} />
+      <TextHoverEffect  duration={0.1} text={'Twino'} />
       <div className="container mx-auto px-4">
         <motion.div 
           variants={containerVariants}

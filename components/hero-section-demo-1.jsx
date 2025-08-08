@@ -50,8 +50,7 @@ export default function HeroSectionOne() {
   return (
     <>
       <div className="relative  mt-10 mb-0 pb-0 mx-auto flex w-full h-full flex-col items-center justify-center">
-        <RetroGrid lightLineColor="violet" 
-        darkLineColor="white"/>
+        <RetroGrid lightLineColor="violet" darkLineColor="white" />
         <div className="absolute inset-y-0 left-0 h-full w-px bg-neutral-200/80 dark:bg-neutral-800/80">
           <div className="absolute top-0 h-40 w-px bg-gradient-to-b from-transparent via-blue-500 to-transparent" />
         </div>
@@ -61,7 +60,7 @@ export default function HeroSectionOne() {
         <div className="absolute inset-x-0 bottom-0 h-px w-full bg-neutral-200/80 dark:bg-neutral-800/80">
           <div className="absolute mx-auto h-px w-40 bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
         </div>
-        <div className="px-4 py-10 md:py-20">
+        <div className=" py-10 md:py-20">
           {/* <h1 className="relative space-y-2 z-10 mb-10 mx-auto max-w-4xl text-center text-2xl font-ubuntu font-bold text-slate-700 md:text-4xl lg:text-7xl dark:text-slate-300">
             {"Twino helps you chat with two AI minds at once"
               .split(" ")
@@ -85,7 +84,7 @@ export default function HeroSectionOne() {
                 </motion.span>
               ))}
           </h1> */}
-          <div className="w-screen flex items-center justify-center text-3xl font-bold mt-5 mb-5">
+          <div className="w-screen  flex items-center justify-center text-3xl font-bold mt-5 mb-5">
             <FuzzyText baseIntensity={0.2} color="violet">
               Twino AI
             </FuzzyText>
@@ -99,9 +98,46 @@ export default function HeroSectionOne() {
             transition={{ duration: 0.3, delay: 0.8 }}
             className="relative z-10 mx-auto max-w-xl py-4 text-center text-lg font-normal text-neutral-600 dark:text-neutral-400"
           >
-            See two AI personalities talk to each other about any topic you
-            want. Just type what you're interested in and watch them share
-            different viewpoints right away.
+            <Highlighter
+              action="underline"
+              color="#FF9800"
+              strokeWidth={1.5}
+              animationDuration={500}
+              iterations={2}
+              padding={2}
+              multiline={true}
+            >
+              Ignite
+            </Highlighter>{" "}
+            a conversation between{" "}
+            <Highlighter
+              action="box"
+              color="#87CEFA"
+              strokeWidth={0.5}
+              animationDuration={500}
+              iterations={2}
+              padding={1}
+              multiline={true}
+            >
+              two AI personalities
+            </Highlighter>{" "}
+            ! Type any topic you like and watch them instantly share{" "}
+            <Highlighter
+              action="circle"
+              color="#90EE90"
+              strokeWidth={0.5}
+              animationDuration={500}
+              iterations={2}
+              padding={1}
+              multiline={true}
+            >
+              unique ideas
+            </Highlighter>{" "}
+            and different views — right before your{" "}
+            <Highlighter action="highlight" color="violet">
+              <span className="text-white">eyes</span>
+            </Highlighter>
+            .
           </motion.p>
           <motion.div
             initial={{ opacity: 0 }}
