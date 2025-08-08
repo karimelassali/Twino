@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://twino.vercel.app/sitemap.xml
