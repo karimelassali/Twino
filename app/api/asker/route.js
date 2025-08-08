@@ -1,13 +1,13 @@
-import { google } from '@ai-sdk/google';
-import { generateText } from 'ai';
 import { NextResponse } from 'next/server';
 
 /**
- * Asker API: Generates a dynamic, context-aware question or opening remark based on the chosen personality.
+ * Asker API: Generates a dynamic, context-aware question or opening remark 
+ * using Pollinations.ai based on the chosen personality.
  */
 export async function POST(req) {
   try {
     const { subject, personalityPair, previousMessages = [] } = await req.json();
+
     if (!subject || !personalityPair) {
       return NextResponse.json({ error: 'Missing subject or personalityPair' }, { status: 400 });
     }
@@ -17,9 +17,7 @@ export async function POST(req) {
 
     // Detect language from the subject or previous messages
     const detectLanguage = (text) => /[\u0600-\u06FF]/.test(text) ? 'Arabic' : 'English';
-    const language = previousMessages.length > 0 
-      ? detectLanguage(previousMessages[previousMessages.length - 1].message)
-      : detectLanguage(subject);
+    const language = previousMessages.length > 0 ? detectLanguage(previousMessages[previousMessages.length - 1].message) : detectLanguage(subject);
     const isEnglish = language === 'English';
 
     // Build a dynamic persona description
@@ -27,7 +25,7 @@ export async function POST(req) {
 
     // Create a professional, dynamic prompt
     let bot1Prompt;
-    
+
     if (previousMessages.length > 0) {
       bot1Prompt = isEnglish
         ? `---Context---\nTopic: "${subject}"\nConversation History: ${previousMessages.map((m, i) => `(${i+1}) ${m.sender}: "${m.message}"`).join(' | ')}\n---Task---\nYou are **${bot1Name}**, respond in ${language} clearly and concisely.\n1. If the question is clear, start with a direct and brief answer.\n2. Then, add clarifications or examples to expand the discussion.\n3. End with one thought-provoking question to move the conversation forward.`
@@ -38,21 +36,33 @@ export async function POST(req) {
         : `---سياق---\nالموضوع: "${subject}"\n---المهمة---\nأنت **${bot1Name}**، تحدث بالعربية الفصحى بجرأة ومهنية.\n1. ابدأ بسؤال مباشر وغير تقليدي يفتح زاوية جديدة على الموضوع.\n2. إذا أمكن، ضمن سطرين تعليقاً موجزاً يوضح هدف السؤال.`;
     }
 
-    const bot1Result = await generateText({
-      model: google('gemini-1.5-flash-8b'),
-      messages: [{ role: 'user', content: [{ type: 'text', text: bot1Prompt }] }],
-    });
+    // --- MODIFICATION START ---
+    // Replaced Google AI SDK with a fetch call to Pollinations.ai
+    const encodedPrompt = encodeURIComponent(bot1Prompt);
+    const pollinationUrl = `https://text.pollinations.ai/${encodedPrompt}`;
+    
+    const response = await fetch(pollinationUrl);
 
-    const bot1Response = bot1Result.text.trim();
+    if (!response.ok) {
+        throw new Error(`Pollinations API request failed with status ${response.status}`);
+    }
+
+    const bot1Response = (await response.text()).trim();
+    // --- MODIFICATION END ---
 
     return NextResponse.json({
-      message: { sender: bot1Name, message: bot1Response, timestamp: new Date().toISOString() }
+      message: {
+        sender: bot1Name,
+        message: bot1Response,
+        timestamp: new Date().toISOString()
+      }
     });
 
   } catch (error) {
     console.error('Asker API Error:', error);
+    // Basic error handling, can be customized further.
     const status = error.status === 429 ? 429 : 500;
     const msg = error.status === 429 ? 'Rate limit exceeded' : 'Failed to generate asker response';
-    return NextResponse.json({ error: msg }, { status });
+    return NextResponse.json({ error: status === 500 ? error.message : msg }, { status });
   }
 }

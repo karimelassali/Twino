@@ -41,10 +41,39 @@ export const metadata = {
   }
 }
 
+/**
+ * The schema.org JSON-LD object that is used to provide structured data
+ * about the website to search engines.
+ *
+ * @type {Object}
+ */
 const jsonLd = {
+  /**
+   * The @context property specifies the schema.org context for the JSON-LD.
+   *
+   * @type {string}
+   */
   "@context": "https://schema.org",
+
+  /**
+   * The @type property specifies the type of the item being described.
+   *
+   * @type {string}
+   */
   "@type": "WebSite",
+
+  /**
+   * The name property specifies the name of the website.
+   *
+   * @type {string}
+   */
   "name": "Twino",
+
+  /**
+   * The url property specifies the URL of the website.
+   *
+   * @type {string}
+   */
   "url": "https://twino.vercel.app"
 };
 
@@ -62,6 +91,7 @@ export default function RootLayout({
               __html: JSON.stringify(jsonLd),
             }}
           />
+            
           <meta name="google-site-verification" content="TFC9KKJST9sPJHv4r0wz0xnmUb09ZFJFC8crGzgUSnk" />
         </head>
         <body className={`${inter.className} flex flex-col min-h-screen`}>
@@ -70,7 +100,6 @@ export default function RootLayout({
             <main className="flex-grow">
               {children}
             </main>
-            <Footer />
           </AuthSyncProvider>
           <Toaster />
         </body>
