@@ -23,7 +23,7 @@ export function CompareDemo() {
             width={true}
             weight={true}
             italic={true}
-            textColor="#000"
+            textColor="violet"
             strokeColor="#ff0000"
             minFontSize={36}
           />

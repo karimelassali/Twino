@@ -142,64 +142,6 @@ ar: {
 
   // --- Render Components ---
 
-  const LanguageSelector = ({ isMobile = false }) => (
-    <div className="relative" ref={langDropdownRef}>
-      <motion.button
-        variants={buttonHoverVariants}
-        whileHover="hover"
-        whileTap="tap"
-        onClick={() => setLangDropdownOpen(prev => !prev)}
-        className={`flex items-center gap-2 rounded-full transition-colors duration-300 ${isMobile ? 'w-full justify-center p-3 text-base' : 'px-3 py-2 text-sm'} ${
-          theme === "dark"
-            ? "bg-slate-800 text-white border border-slate-700 hover:bg-slate-700"
-            : "bg-blue-50 text-blue-800 border border-blue-100 hover:bg-blue-100"
-        }`}
-        aria-label="Change language"
-        aria-haspopup="true"
-        aria-expanded={langDropdownOpen}
-      >
-        <Globe size={18} />
-        {!isMobile && <span>{languageLabels[language]}</span>}
-        <motion.div animate={{ rotate: langDropdownOpen ? 180 : 0 }}>
-          <ChevronDown size={16} />
-        </motion.div>
-      </motion.button>
-      <AnimatePresence>
-        {langDropdownOpen && (
-          <motion.div
-            variants={dropdownVariants}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            className={`absolute mt-2 min-w-[150px] rounded-xl overflow-hidden shadow-2xl z-20 ${
-                isMobile ? 'bottom-full mb-2' : 'top-full'
-            } ${language === "ar" && !isMobile ? "right-0" : "left-0"} ${
-              theme === "dark"
-                ? "bg-slate-800 border border-slate-700"
-                : "bg-white border border-gray-200"
-            }`}
-          >
-            {Object.entries(languageLabels).map(([code, label]) => (
-              <button
-                key={code}
-                onClick={() => {
-                  setLanguage(code);
-                  setLangDropdownOpen(false);
-                }}
-                className={`w-full text-left px-4 py-2.5 flex items-center gap-3 text-sm font-medium transition-colors duration-200 ${
-                  language === code
-                    ? (theme === "dark" ? "bg-blue-900 text-blue-300" : "bg-blue-100 text-blue-700")
-                    : (theme === "dark" ? "text-slate-300 hover:bg-slate-700" : "text-slate-700 hover:bg-blue-50")
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
 
   return (
     <>
@@ -232,7 +174,6 @@ ar: {
 
             {/* Desktop Navigation */}
             <nav className={`hidden md:flex items-center gap-4 ${language === "ar" ? "flex-row-reverse" : ""}`}>
-              <LanguageSelector />
               <motion.button
                 variants={buttonHoverVariants}
                 whileHover="hover"
@@ -313,7 +254,7 @@ ar: {
               {/* Mobile Menu Header */}
               <div className={`flex justify-between items-center p-4 border-b border-gray-200 dark:border-slate-800 ${language === "ar" ? "flex-row-reverse" : ""}`}>
                 <a href="/" className="flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
-                  <Image src="/twino.png" alt="Twino Logo" width={48} height={48} className="rounded-full"/>
+                  <Image src="/twino.webp" alt="Twino Logo" width={48} height={48} className="rounded-full"/>
                   <span className="text-xl font-black text-gray-800 dark:text-white">Twino</span>
                 </a>
                 <motion.button

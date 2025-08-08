@@ -941,13 +941,11 @@ export default function TwinoChat({ params }) {
     hover: { scale: 1.1, boxShadow: "0 8px 16px rgba(76, 76, 255, 0.3)" },
   };
 
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-  };
-
-  const closeSidebar = () => {
-    setIsOpen(false);
-  };
+  useEffect(() => {
+    if (data && data.subject && data.personalities.personality_pair) {
+      setStop(true);
+    }
+  }, [data]);
 
   return (
     <motion.div
@@ -1225,7 +1223,12 @@ export default function TwinoChat({ params }) {
                                 : "#2A324B",
                             }}
                           >
-                            {message.message}
+                            
+                            {message.message.startsWith('https://image.pollinations.ai') ? (
+                              <img loading="lazy" src={message.message} alt="Generated Image" className="rounded-lg" />
+                            ) : (
+                              <span>{message.message}</span>
+                            )}
 
                             {/* Copy Confirmation */}
                             <AnimatePresence>
@@ -1432,6 +1435,7 @@ export default function TwinoChat({ params }) {
                   <div className="flex-1 relative">
                     <input
                       ref={inputRef}
+                      aria-disabled={!stop}
                       type="text"
                       placeholder={
                         isSendingQuestion

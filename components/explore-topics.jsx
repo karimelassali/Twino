@@ -13,7 +13,7 @@ export default function ExploreTopics() {
   const [topics, setTopics] = useState([]);
 
   const handleSelectTopic = (topic) => {
-    router.push(`/?topic=${encodeURIComponent(topic.title)}`);
+    router.push(`/chat/${encodeURIComponent(topic.id)}`);
   };
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function ExploreTopics() {
         width={true}
         weight={true}
         italic={true}
-        textColor="#000"
+        textColor="violet"
         strokeColor="#ff0000"
         minFontSize={20}
       />

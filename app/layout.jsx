@@ -28,7 +28,7 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Twino - Two Minds. One Talk.",
+    title: "Twino Ai - Two Minds. One Talk.",
     description: "Experience the magic of two AI personalities discussing any topic you choose.",
     creator: "@twino",
     images: ["/twino.png"]
