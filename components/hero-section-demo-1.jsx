@@ -3,21 +3,17 @@
 import { motion } from "framer-motion";
 import MainInputArea from "@/components/main-input-area";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
-import {
-  MessageSquare,
-  Brain,
-  Sliders,
-  Search,
-  Sparkles,
-} from "lucide-react";
+import { MessageSquare, Brain, Sliders, Search, Sparkles } from "lucide-react";
 
 import { HeroHighlight, Highlight } from "@/components/ui/hero-highlight";
 import { Highlighter } from "./magicui/highlighter";
-import  NewfeaturePopover  from "@/components/new-feature";
+import NewfeaturePopover from "@/components/new-feature";
+import FuzzyText from "./ui/fuzzy-text";
+import { RetroGrid } from "./magicui/retro-grid";
 
 const GridItem = ({ area, icon, title, description }) => {
   return (
-    <motion.li 
+    <motion.li
       className={`min-h-[14rem] list-none ${area}`}
       whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.2 }}
@@ -54,6 +50,8 @@ export default function HeroSectionOne() {
   return (
     <>
       <div className="relative  mt-10 mb-0 pb-0 mx-auto flex w-full h-full flex-col items-center justify-center">
+        <RetroGrid lightLineColor="violet" 
+        darkLineColor="white"/>
         <div className="absolute inset-y-0 left-0 h-full w-px bg-neutral-200/80 dark:bg-neutral-800/80">
           <div className="absolute top-0 h-40 w-px bg-gradient-to-b from-transparent via-blue-500 to-transparent" />
         </div>
@@ -64,7 +62,7 @@ export default function HeroSectionOne() {
           <div className="absolute mx-auto h-px w-40 bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
         </div>
         <div className="px-4 py-10 md:py-20">
-          <h1 className="relative space-y-2 z-10 mb-10 mx-auto max-w-4xl text-center text-2xl font-ubuntu font-bold text-slate-700 md:text-4xl lg:text-7xl dark:text-slate-300">
+          {/* <h1 className="relative space-y-2 z-10 mb-10 mx-auto max-w-4xl text-center text-2xl font-ubuntu font-bold text-slate-700 md:text-4xl lg:text-7xl dark:text-slate-300">
             {"Twino helps you chat with two AI minds at once"
               .split(" ")
               .map((word, index) => (
@@ -86,10 +84,12 @@ export default function HeroSectionOne() {
                   )}
                 </motion.span>
               ))}
-          </h1>
-          <Highlighter action="underline" color="red" >
-            
-          </Highlighter>
+          </h1> */}
+          <div className="w-screen flex items-center justify-center text-3xl font-bold mt-5 mb-5">
+            <FuzzyText baseIntensity={0.2} color="violet">
+              Twino AI
+            </FuzzyText>
+          </div>
 
           <MainInputArea className="mt-4" />
 
@@ -99,7 +99,9 @@ export default function HeroSectionOne() {
             transition={{ duration: 0.3, delay: 0.8 }}
             className="relative z-10 mx-auto max-w-xl py-4 text-center text-lg font-normal text-neutral-600 dark:text-neutral-400"
           >
-            See two AI personalities talk to each other about any topic you want. Just type what you're interested in and watch them share different viewpoints right away.
+            See two AI personalities talk to each other about any topic you
+            want. Just type what you're interested in and watch them share
+            different viewpoints right away.
           </motion.p>
           <motion.div
             initial={{ opacity: 0 }}
@@ -118,12 +120,12 @@ export default function HeroSectionOne() {
             >
               See Examples
             </button> */}
-            <NewfeaturePopover className title="New Feature"/>
+            <NewfeaturePopover className title="New Feature" />
           </motion.div>
         </div>
       </div>
       <div className="w-full pb-30 h-full p-5">
-        <motion.ul 
+        <motion.ul
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
@@ -132,7 +134,7 @@ export default function HeroSectionOne() {
           <GridItem
             area="md:[grid-area:1/1/2/7] xl:[grid-area:1/1/2/5]"
             icon={
-              <motion.div 
+              <motion.div
                 whileHover={{ rotate: 15, scale: 1.2 }}
                 className="bg-gradient-to-tr from-blue-500 to-indigo-600 p-2 rounded-lg"
               >
@@ -145,7 +147,7 @@ export default function HeroSectionOne() {
           <GridItem
             area="md:[grid-area:1/7/2/13] xl:[grid-area:2/1/3/5]"
             icon={
-              <motion.div 
+              <motion.div
                 whileHover={{ rotate: -15, scale: 1.2 }}
                 className="bg-gradient-to-tr from-purple-500 to-pink-600 p-2 rounded-lg"
               >
@@ -158,7 +160,7 @@ export default function HeroSectionOne() {
           <GridItem
             area="md:[grid-area:2/1/3/7] xl:[grid-area:1/5/3/8]"
             icon={
-              <motion.div 
+              <motion.div
                 whileHover={{ rotate: 15, scale: 1.2 }}
                 className="bg-gradient-to-tr from-amber-500 to-orange-600 p-2 rounded-lg"
               >
@@ -171,7 +173,7 @@ export default function HeroSectionOne() {
           <GridItem
             area="md:[grid-area:2/7/3/13] xl:[grid-area:1/8/2/13]"
             icon={
-              <motion.div 
+              <motion.div
                 whileHover={{ rotate: -15, scale: 1.2 }}
                 className="bg-gradient-to-tr from-cyan-500 to-blue-600 p-2 rounded-lg"
               >
@@ -184,7 +186,7 @@ export default function HeroSectionOne() {
           <GridItem
             area="md:[grid-area:3/1/4/13] xl:[grid-area:2/8/3/13]"
             icon={
-              <motion.div 
+              <motion.div
                 whileHover={{ rotate: 15, scale: 1.2 }}
                 className="bg-gradient-to-tr from-green-500 to-emerald-600 p-2 rounded-lg"
               >
