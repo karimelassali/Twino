@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { HeroHighlight, Highlight } from "@/components/ui/hero-highlight";
+import { Highlighter } from "./magicui/highlighter";
 import  NewfeaturePopover  from "@/components/new-feature";
 
 const GridItem = ({ area, icon, title, description }) => {
@@ -86,6 +87,9 @@ export default function HeroSectionOne() {
                 </motion.span>
               ))}
           </h1>
+          <Highlighter action="underline" color="red" >
+            
+          </Highlighter>
 
           <MainInputArea className="mt-4" />
 

@@ -217,12 +217,12 @@ ar: {
             <a href="/" className="flex items-center gap-3" aria-label="Twino Homepage">
                 <motion.div whileHover={{ scale: 1.1, rotate: 5 }}>
                     <Image
-                        src="/twino.png"
+                        src="/twino.webp"
                         alt="Twino Logo"
-                        width={48}
-                        height={48}
+                        width={50}
+                        height={50}
                         className="rounded-full shadow-md"
-                        priority
+                        priority='true'
                     />
                 </motion.div>
               <span className="text-xl font-black text-gray-800 dark:text-white tracking-tight hidden sm:inline">

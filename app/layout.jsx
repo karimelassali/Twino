@@ -4,7 +4,6 @@ import { Toaster } from 'react-hot-toast';
 import { ClerkProvider } from '@clerk/nextjs';
 import { AuthSyncProvider } from '@/components/auth-sync-provider';
 import Navbar from "@/components/navbar";
-import Footer from "@/components/footer";
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
@@ -35,9 +34,9 @@ export const metadata = {
     images: ["/twino.png"]
   },
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png"
+    icon: "/favicons/favicon.ico",
+    shortcut: "favicons/favicon.ico",
+    apple: "favicons/apple-touch-icon.png"
   }
 }
 
