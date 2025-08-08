@@ -2,6 +2,17 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Hide footer on chat page */
+body.chat-page footer {
+  display: none !important;
+}
+
+body.chat-page {
+  --footer-height: 0px;
+  min-height: 100vh !important;
+  height: 100% !important;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

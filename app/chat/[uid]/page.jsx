@@ -11,7 +11,7 @@ import {
   Download, Share2, Bookmark, Copy, ThumbsUp,
   ThumbsDown, MoreHorizontal, Volume2, VolumeX,
   AlertCircle, CheckCircle, Info, Settings,
-  ChevronDown
+  ChevronDown, Home, Link2
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -213,6 +213,13 @@ const ConversationSkeleton = ({ darkMode = false }) => {
 };
 
 export default function TwinoChat({ params }) {
+  // Add class to hide navbar and footer
+  useEffect(() => {
+    document.body.classList.add('chat-page');
+    return () => {
+      document.body.classList.remove('chat-page');
+    };
+  }, []);
   const { uid } = React.use(params);
   const router = useRouter();
   const supabase = createClient();
@@ -268,6 +275,10 @@ export default function TwinoChat({ params }) {
   };
 
   const [darkMode, setDarkMode] = useState(false);
+  
+  const toggleDarkMode = useCallback(() => {
+    setDarkMode(prevMode => !prevMode);
+  }, []);
   const [conversation, setConversation] = useState([]);
   const [thinkingPersona, setThinkingPersona] = useState(null);
   const [readingPersona, setReadingPersona] = useState(null); 
@@ -281,8 +292,8 @@ export default function TwinoChat({ params }) {
   const [stop, setStop] = useState(false);
 
   const [isSpeaking, setIsSpeaking] = useState(false);
-
-
+  const [isLinkCopied, setIsLinkCopied] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const [messages, setMessages] = useState([]);
   const [timeoutIds, setTimeoutIds] = useState([]);
   const stopRef = useRef(false);
@@ -326,6 +337,7 @@ export default function TwinoChat({ params }) {
   const emojiPickerRef = useRef(null);
   const attachmentOptionsRef = useRef(null);
   const lastScrollPosition = useRef(0);
+  
 
 
   useEffect(() => {
@@ -1219,38 +1231,26 @@ export default function TwinoChat({ params }) {
         </div>
         
         <div className="flex items-center space-x-3">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <button  
-                className="flex items-center justify-center p-2 rounded-full transition-colors duration-200 hover:bg-opacity-20"
-                style={{ 
-                  backgroundColor: darkMode ? 'rgba(92, 92, 255, 0.15)' : 'rgba(92, 92, 255, 0.1)',
-                  color: darkMode ? '#8A7FFF' : '#5C5CFF'
-                }}
-              >
-                <Share2 size={18} style={{ color: darkMode ? '#8A7FFF' : '#5C5CFF' }} />
-              </button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Share this conversation</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Anyone with the link will be able to view this entire conversation about 
-                  "{selectedTopic}". The shared link will display all messages.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction 
-                  style={{ backgroundColor: darkMode ? '#8A7FFF' : '#5Curriculum VitaeCFF' }} 
-                  onClick={shareConversation}
-                >
-                  Generate Link
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {/* Theme Toggle Button */}
+          <motion.button
+            onClick={toggleDarkMode}
+            className="flex items-center justify-center p-2 rounded-full transition-colors duration-200 hover:bg-opacity-20"
+            style={{ 
+              backgroundColor: darkMode ? 'rgba(92, 92, 255, 0.15)' : 'rgba(92, 92, 255, 0.1)',
+              color: darkMode ? '#8A7FFF' : '#5C5CFF'
+            }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {darkMode ? (
+              <Sun size={18} style={{ color: '#8A7FFF' }} />
+            ) : (
+              <Moon size={18} style={{ color: '#5C5CFF' }} />
+            )}
+          </motion.button>
           
+          {/* Volume Toggle Button */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -1260,7 +1260,7 @@ export default function TwinoChat({ params }) {
               backgroundColor: darkMode ? 'rgba(92, 92, 255, 0.15)' : 'rgba(92, 92, 255, 0.1)',
               color: darkMode ? '#8A7FFF' : '#5C5CFF'
             }}
-            title={notificationSound ? "Mute notifications" : "Unmute notifications"}
+            title={notificationSound ? 'Mute notifications' : 'Unmute notifications'}
           >
             {notificationSound ? (
               <Volume2 size={18} style={{ color: darkMode ? '#8A7FFF' : '#5C5CFF' }} />
@@ -1283,24 +1283,7 @@ export default function TwinoChat({ params }) {
             <RefreshCw size={18} style={{ color: darkMode ? '#8A7FFF' : '#5C5CFF' }} />
           </motion.button>
           
-          <motion.button
-            whileHover={{ scale: 1.05, rotate: darkMode ? -15 : 15 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setDarkMode(!darkMode)}
-            className="flex items-center justify-center p-2 rounded-full transition-colors duration-200 hover:bg-opacity-20"
-            style={{ 
-              backgroundColor: darkMode ? 'rgba(92, 92, 255, 0.15)' : 'rgba(92, 92, 255, 0.1)',
-              color: darkMode ? '#8A7FFF' : '#5C5CFF'
-            }}
-            title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            {darkMode ? (
-              <Sun size={18} style={{ color: darkMode ? '#8A7FFF' : '#5C5CFF' }} />
-            ) : (
-              <Moon size={18} style={{ color: darkMode ? '#8A7FFF' : '#5C5CFF' }} />
-            )}
-          </motion.button>
-          
+          {/* Fullscreen Toggle Button */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -1315,6 +1298,7 @@ export default function TwinoChat({ params }) {
             <Square size={18} style={{ color: darkMode ? '#8A7FFF' : '#5C5CFF' }} />
           </motion.button>
           
+          {/* Home Button */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -1326,7 +1310,7 @@ export default function TwinoChat({ params }) {
             }}
             title="Return to main page"
           >
-            <ArrowLeft size={18} style={{ color: darkMode ? '#8A7FFF' : '#5C5CFF' }} />
+            <Home size={18} style={{ color: darkMode ? '#8A7FFF' : '#5C5CFF' }} />
           </motion.button>
         </div>
       </motion.header>
@@ -1499,6 +1483,7 @@ export default function TwinoChat({ params }) {
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
         
         <div className="flex-1 flex flex-col overflow-hidden relative">
           {isHistoryPanelMobile && !showHistoryPanel && (
@@ -1564,7 +1549,8 @@ export default function TwinoChat({ params }) {
               </div>
             </div>
             
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              {/* Pause/Continue Button */}
               {isConversationOwner ? (
                 isConversationActive ? (
                   <motion.button
@@ -1608,8 +1594,76 @@ export default function TwinoChat({ params }) {
                   <span className="text-sm font-medium">View only</span>
                 </div>
               )}
+
+              {/* Home Button */}
+              <motion.button
+                onClick={() => router.push("/")}
+                className="flex items-center justify-center p-2 rounded-full transition-colors duration-200 hover:bg-opacity-20"
+                style={{ 
+                  backgroundColor: darkMode ? 'rgba(92, 92, 255, 0.15)' : 'rgba(92, 92, 255, 0.1)',
+                  color: darkMode ? '#8A7FFF' : '#5C5CFF'
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Go to Home"
+              >
+                <Home size={18} style={{ color: darkMode ? '#8A7FFF' : '#5C5CFF' }} />
+              </motion.button>
+
+              {/* Copy Link Button */}
+              <motion.button
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast.success('Link copied to clipboard!');
+                }}
+                className="flex items-center justify-center p-2 rounded-full transition-colors duration-200 hover:bg-opacity-20"
+                style={{ 
+                  backgroundColor: darkMode ? 'rgba(92, 92, 255, 0.15)' : 'rgba(92, 92, 255, 0.1)',
+                  color: darkMode ? '#8A7FFF' : '#5C5CFF'
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Copy conversation link"
+              >
+                <Link2 size={18} style={{ color: darkMode ? '#8A7FFF' : '#5C5CFF' }} />
+              </motion.button>
+
+              {/* Share Button */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <motion.button  
+                    className="flex items-center justify-center p-2 rounded-full transition-colors duration-200 hover:bg-opacity-20"
+                    style={{ 
+                      backgroundColor: darkMode ? 'rgba(92, 92, 255, 0.15)' : 'rgba(92, 92, 255, 0.1)',
+                      color: darkMode ? '#8A7FFF' : '#5C5CFF'
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title="Share conversation"
+                  >
+                    <Share2 size={18} style={{ color: darkMode ? '#8A7FFF' : '#5C5CFF' }} />
+                  </motion.button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Share this conversation</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Anyone with the link will be able to view this entire conversation about 
+                      "{selectedTopic}". The shared link will display all messages.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      style={{ backgroundColor: darkMode ? '#8A7FFF' : '#5C5CFF' }} 
+                      onClick={shareConversation}
+                    >
+                      Generate Link
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
-          </div>
           
           <div 
             ref={chatContainerRef}
@@ -1974,20 +2028,11 @@ export default function TwinoChat({ params }) {
                 />
                 
                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-                  <motion.button
-                    type="button"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => setShowAttachmentOptions(!showAttachmentOptions)}
-                    className="p-1"
-                    style={{ color: darkMode ? '#D0C4FF' : '#4C4CFF' }}
-                  >
-                    <Paperclip size={18} />
-                  </motion.button>
+                  {/* Attachment button removed */}
                 </div>
                 
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-                  <motion.button
+                  {/* <motion.button
                     type="button"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
@@ -1996,7 +2041,7 @@ export default function TwinoChat({ params }) {
                     style={{ color: darkMode ? '#D0C4FF' : '#4C4CFF' }}
                   >
                     <Smile size={18} />
-                  </motion.button>
+                  </motion.button> */}
                   
                   <motion.button
                     type="button"
@@ -2022,7 +2067,7 @@ export default function TwinoChat({ params }) {
                 </div>
               </div>
               
-              <AnimatePresence>
+              {/* <AnimatePresence>
                 {showAttachmentOptions && (
                   <motion.div
                     ref={attachmentOptionsRef}
@@ -2058,7 +2103,7 @@ export default function TwinoChat({ params }) {
                     </div>
                   </motion.div>
                 )}
-              </AnimatePresence>
+              </AnimatePresence> */}
               
               {showEmojiPicker && (
                 <div ref={emojiPickerRef} className="absolute bottom-16 left-4 right-4">
