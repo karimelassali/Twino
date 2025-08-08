@@ -304,7 +304,6 @@ ar: {
               
               {/* Mobile Menu Footer */}
               <div className={`p-4 border-t border-gray-200 dark:border-slate-800 flex items-center justify-between gap-4 ${language === "ar" ? "flex-row-reverse" : ""}`}>
-                <LanguageSelector isMobile={true} />
                 <motion.button
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                   className={`flex-grow flex items-center justify-center gap-3 p-3 rounded-lg transition-colors duration-300 ${
