@@ -7,7 +7,7 @@ import TextStretching from "./ui/text_stretching";
 
 export function CompareDemo() {
   return (
-    <div className="w-full border-t mt-30 py-16 flex flex-col items-center gap-8">
+    <div className="w-full border-t mt-20 py-16 flex flex-col items-center gap-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

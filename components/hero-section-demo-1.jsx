@@ -84,7 +84,7 @@ export default function HeroSectionOne() {
                 </motion.span>
               ))}
           </h1> */}
-          <div className="w-screen  flex items-center justify-center text-3xl font-bold mt-5 mb-5">
+          <div className="w-full flex items-center justify-center text-3xl font-bold mt-5 mb-5">
             <FuzzyText baseIntensity={0.2} color="violet">
               Twino AI
             </FuzzyText>
@@ -160,15 +160,15 @@ export default function HeroSectionOne() {
           </motion.div>
         </div>
       </div>
-      <div className="w-full pb-30 h-full p-5">
+      <div className="w-full pb-20 h-full p-5">
         <motion.ul
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="grid grid-cols-1 grid-rows-none gap-4 md:grid-cols-12 md:grid-rows-3 lg:gap-4 xl:max-h-[34rem] xl:grid-rows-2"
+          className="grid grid-cols-1 grid-rows-none gap-4 md:grid-cols-2 lg:gap-4 xl:grid-cols-3"
         >
           <GridItem
-            area="md:[grid-area:1/1/2/7] xl:[grid-area:1/1/2/5]"
+            area=""
             icon={
               <motion.div
                 whileHover={{ rotate: 15, scale: 1.2 }}
@@ -181,7 +181,7 @@ export default function HeroSectionOne() {
             description="Watch two AI characters talk with each other and share surprising ideas about any topic you can think of."
           />
           <GridItem
-            area="md:[grid-area:1/7/2/13] xl:[grid-area:2/1/3/5]"
+            area=""
             icon={
               <motion.div
                 whileHover={{ rotate: -15, scale: 1.2 }}
@@ -194,7 +194,7 @@ export default function HeroSectionOne() {
             description="Uses the newest AI technology to create real-sounding conversations with deep understanding of many topics."
           />
           <GridItem
-            area="md:[grid-area:2/1/3/7] xl:[grid-area:1/5/3/8]"
+            area="md:col-span-2 xl:col-span-1"
             icon={
               <motion.div
                 whileHover={{ rotate: 15, scale: 1.2 }}
@@ -208,7 +208,7 @@ export default function HeroSectionOne() {
           />
           
           <GridItem
-            area="md:[grid-area:2/7/3/13] xl:[grid-area:1/8/2/13]"
+            area=""
             icon={
               <motion.div
                 whileHover={{ rotate: -15, scale: 1.2 }}
@@ -221,7 +221,7 @@ export default function HeroSectionOne() {
             description="Find fresh thoughts and viewpoints as the AIs work together and disagree, showing you connections and possibilities you might have missed."
           />
           <GridItem
-            area="md:[grid-area:3/1/4/13] xl:[grid-area:2/8/3/13]"
+            area="md:col-span-2 xl:col-span-1"
             icon={
               <motion.div
                 whileHover={{ rotate: 15, scale: 1.2 }}

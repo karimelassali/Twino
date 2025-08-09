@@ -1,7 +1,20 @@
-"use client";;
+"use client";
 import { memo, useCallback, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { animate } from "motion/react";
+import { animate } from "framer-motion";
+
+// Debounce function for performance
+const debounce = (func, wait) => {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
 
 const GlowingEffect = memo(({
   blur = 0,
@@ -19,70 +32,88 @@ const GlowingEffect = memo(({
   const lastPosition = useRef({ x: 0, y: 0 });
   const animationFrameRef = useRef(0);
 
-  const handleMove = useCallback((e) => {
-    if (!containerRef.current) return;
+  const handleMove = useCallback(
+    debounce((e) => {
+      if (!containerRef.current) return;
 
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-
-    animationFrameRef.current = requestAnimationFrame(() => {
-      const element = containerRef.current;
-      if (!element) return;
-
-      const { left, top, width, height } = element.getBoundingClientRect();
-      const mouseX = e?.x ?? lastPosition.current.x;
-      const mouseY = e?.y ?? lastPosition.current.y;
-
-      if (e) {
-        lastPosition.current = { x: mouseX, y: mouseY };
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
 
-      const center = [left + width * 0.5, top + height * 0.5];
-      const distanceFromCenter = Math.hypot(mouseX - center[0], mouseY - center[1]);
-      const inactiveRadius = 0.5 * Math.min(width, height) * inactiveZone;
+      animationFrameRef.current = requestAnimationFrame(() => {
+        const element = containerRef.current;
+        if (!element) return;
 
-      if (distanceFromCenter < inactiveRadius) {
-        element.style.setProperty("--active", "0");
-        return;
-      }
+        const { left, top, width, height } = element.getBoundingClientRect();
+        const mouseX = e?.x ?? lastPosition.current.x;
+        const mouseY = e?.y ?? lastPosition.current.y;
 
-      const isActive =
-        mouseX > left - proximity &&
-        mouseX < left + width + proximity &&
-        mouseY > top - proximity &&
-        mouseY < top + height + proximity;
+        if (e) {
+          lastPosition.current = { x: mouseX, y: mouseY };
+        }
 
-      element.style.setProperty("--active", isActive ? "1" : "0");
+        const center = [left + width * 0.5, top + height * 0.5];
+        const distanceFromCenter = Math.hypot(mouseX - center[0], mouseY - center[1]);
+        const inactiveRadius = 0.5 * Math.min(width, height) * inactiveZone;
 
-      if (!isActive) return;
+        if (distanceFromCenter < inactiveRadius) {
+          element.style.setProperty("--active", "0");
+          return;
+        }
 
-      const currentAngle =
-        parseFloat(element.style.getPropertyValue("--start")) || 0;
-      let targetAngle =
-        (180 * Math.atan2(mouseY - center[1], mouseX - center[0])) /
-          Math.PI +
-        90;
+        const isActive =
+          mouseX > left - proximity &&
+          mouseX < left + width + proximity &&
+          mouseY > top - proximity &&
+          mouseY < top + height + proximity;
 
-      const angleDiff = ((targetAngle - currentAngle + 180) % 360) - 180;
-      const newAngle = currentAngle + angleDiff;
+        element.style.setProperty("--active", isActive ? "1" : "0");
 
-      animate(currentAngle, newAngle, {
-        duration: movementDuration,
-        ease: [0.16, 1, 0.3, 1],
-        onUpdate: (value) => {
-          element.style.setProperty("--start", String(value));
-        },
+        if (!isActive) return;
+
+        const currentAngle =
+          parseFloat(element.style.getPropertyValue("--start")) || 0;
+        let targetAngle =
+          (180 * Math.atan2(mouseY - center[1], mouseX - center[0])) /
+            Math.PI +
+          90;
+
+        const angleDiff = ((targetAngle - currentAngle + 180) % 360) - 180;
+        const newAngle = currentAngle + angleDiff;
+
+        animate(currentAngle, newAngle, {
+          duration: movementDuration,
+          ease: [0.16, 1, 0.3, 1],
+          onUpdate: (value) => {
+            element.style.setProperty("--start", String(value));
+          },
+        });
       });
-    });
-  }, [inactiveZone, proximity, movementDuration]);
+    }, 16), // 60fps throttling
+    [inactiveZone, proximity, movementDuration]
+  );
 
   useEffect(() => {
     if (disabled) return;
 
+    // Add intersection observer to pause animations when not visible
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting && containerRef.current) {
+          containerRef.current.style.setProperty("--active", "0");
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
     const handleScroll = () => handleMove();
     const handlePointerMove = (e) => handleMove(e);
 
+    // Use passive listeners for better performance
     window.addEventListener("scroll", handleScroll, { passive: true });
     document.body.addEventListener("pointermove", handlePointerMove, {
       passive: true,
@@ -92,6 +123,7 @@ const GlowingEffect = memo(({
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      observer.disconnect();
       window.removeEventListener("scroll", handleScroll);
       document.body.removeEventListener("pointermove", handlePointerMove);
     };

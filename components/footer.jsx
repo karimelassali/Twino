@@ -30,11 +30,11 @@ export default function Footer() {
       initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7 }}
-      className="bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 border-t border-gray-200 dark:border-gray-800 py-12 mt-16 overflow-hidden"
+      className="bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 border-t border-gray-200 dark:border-gray-800 py-12 mt-16 overflow-hidden w-full"
     >
-      <TextHoverEffect  duration={0.1} text={'Twino'} />
       <div className="container mx-auto px-4">
-        <motion.div 
+        <TextHoverEffect duration={0.1} text={"Twino"} />
+        <motion.div
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
