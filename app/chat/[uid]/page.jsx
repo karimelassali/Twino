@@ -941,11 +941,7 @@ export default function TwinoChat({ params }) {
     hover: { scale: 1.1, boxShadow: "0 8px 16px rgba(76, 76, 255, 0.3)" },
   };
 
-  useEffect(() => {
-    if (data && data.subject && data.personalities.personality_pair) {
-      setStop(true);
-    }
-  }, [data]);
+  
 
   return (
     <motion.div
