@@ -206,6 +206,7 @@ export default function HeroSectionOne() {
             title="Different Characters"
             description="Pick from types like thinker, scientist, artist, or questioner to create talks that help you see things in new ways."
           />
+          
           <GridItem
             area="md:[grid-area:2/7/3/13] xl:[grid-area:1/8/2/13]"
             icon={

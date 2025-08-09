@@ -147,7 +147,7 @@ ar: {
     <>
       <header
         role="banner"
-        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ease-in-out ${
+        className={`sticky top-0 left-0 w-full z-50 transition-all duration-300 ease-in-out ${
           scrolled
             ? `bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg shadow-md py-2 ${theme === 'dark' ? 'shadow-slate-800/20' : 'shadow-blue-100/50'}`
             : "bg-transparent py-4"
