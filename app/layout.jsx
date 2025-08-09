@@ -108,10 +108,7 @@ export default function RootLayout({ children}){
             href="/favicons/favicon-16x16.png"
           />
           <link rel="manifest" href="/site.webmanifest" />
-          <meta
-            name="google-site-verification"
-            content="TFC9KKJST9sPJHv4r0wz0xnmUb09ZFJFC8crGzgUSnk"
-          />
+         <meta name="google-site-verification" content="PskT5wE4gNX-V0g67UINepBAoTKKP1achxbnMR2XLkk" />
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
