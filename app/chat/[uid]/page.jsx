@@ -16,6 +16,7 @@ import {
   Info,
   ChevronDown,
 } from "lucide-react";
+import LagIndicator from "@/components/ui/lag-indicator";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -28,66 +29,7 @@ import { Progress } from "@/components/ui/progress";
 import { colors, mockReadingTexts, Typing } from "@/lib/helpers.js";
 import { ChatHeader } from "@/components/chatComponents/chat-header";
 import HistorySidebar from "@/components/history-sidebar";
-// Enhanced glass effect component
-const GlassEffect = ({
-  children,
-  active = false,
-  darkMode = false,
-  blur = 8,
-  opacity = 0.7,
-  isAsker = false,
-  isResponder = false,
-}) => {
-  let bgColor = darkMode
-    ? `rgba(35, 42, 63, ${active ? opacity + 0.1 : opacity})`
-    : `rgba(255, 255, 255, ${active ? opacity + 0.1 : opacity})`;
-
-  let borderColor = darkMode
-    ? `1px solid rgba(92, 92, 255, 0.15)`
-    : `1px solid rgba(226, 232, 240, 0.8)`;
-
-  let gradientBg = null;
-
-  if (isAsker) {
-    bgColor = darkMode
-      ? `rgba(47, 58, 87, ${opacity})`
-      : `rgba(241, 245, 249, ${opacity})`;
-    borderColor = darkMode
-      ? `1px solid rgba(92, 92, 255, 0.2)`
-      : `1px solid rgba(92, 92, 255, 0.15)`;
-    gradientBg = darkMode
-      ? `linear-gradient(135deg, rgba(47, 58, 87, ${opacity}), rgba(92, 92, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 100%)`
-      : `linear-gradient(135deg, rgba(241, 245, 249, ${opacity}), rgba(208, 196, 255, 0.3) 50%, rgba(255, 255, 255, 0.1) 100%)`;
-  } else if (isResponder) {
-    bgColor = darkMode
-      ? `rgba(92, 92, 255, ${opacity - 0.3})`
-      : `rgba(208, 196, 255, ${opacity - 0.1})`;
-    borderColor = darkMode
-      ? `1px solid rgba(138, 127, 255, 0.3)`
-      : `1px solid rgba(92, 92, 255, 0.2)`;
-    gradientBg = darkMode
-      ? `linear-gradient(135deg, rgba(92, 92, 255, 0.4), rgba(50, 50, 155, 0.5))`
-      : `linear-gradient(135deg, rgba(208, 196, 255, 0.6), rgba(92, 92, 255, 0.2))`;
-  }
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="rounded-xl overflow-hidden"
-      style={{
-        backdropFilter: `blur(${blur}px)`,
-        background: gradientBg || bgColor,
-        boxShadow: darkMode
-          ? `0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.07)`
-          : `0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.7)`,
-        border: borderColor,
-      }}
-    >
-      {children}
-    </motion.div>
-  );
-};
+import Message, { GlassEffect } from "@/components/chatComponents/message";
 
 // Pulse effect for activity visualization
 const PulseEffect = ({ active, color, size = "small" }) => {
@@ -218,24 +160,33 @@ export default function TwinoChat({ params }) {
   const supabase = createClient();
 
   // Core state
-  const [darkMode, setDarkMode] = useState(false);
-  const [conversation, setConversation] = useState([]);
+  // Detect theme before first render
+  let initialDarkMode = false;
+  if (typeof window !== "undefined") {
+    const storedTheme = window.localStorage.getItem("theme");
+    initialDarkMode = storedTheme === "dark";
+    document.documentElement.classList.toggle("dark", initialDarkMode);
+  }
+  const [darkMode, setDarkMode] = useState(initialDarkMode);
+  const [visibleMessages, setVisibleMessages] = useState([]);
+  const conversationHistory = useRef([]);
   const [thinkingPersona, setThinkingPersona] = useState(null);
   const [readingPersona, setReadingPersona] = useState(null);
   const [selectedPersonality, setSelectedPersonality] = useState(
     botPersonalities[0].pair
   );
   const [selectedTopic, setSelectedTopic] = useState("");
-  const [showHistoryPanel, setShowHistoryPanel] = useState(true);
-  const [isHistoryPanelMobile, setIsHistoryPanelMobile] = useState(false);
   const chatContainerRef = useRef(null);
   const [data, setData] = useState(null);
   const [isConversationActive, setIsConversationActive] = useState(true);
   const [stop, setStop] = useState(false);
 
+  // Pagination loading state
+  const [isConversationLoadingOlder, setIsConversationLoadingOlder] = useState(false);
+
   // UI state
 
-  const [timeoutIds, setTimeoutIds] = useState([]);
+  const timeoutIds = useRef([]);
   const stopRef = useRef(false);
   const hasStartedConversation = useRef(false);
   const [customQuestion, setCustomQuestion] = useState("");
@@ -262,13 +213,16 @@ export default function TwinoChat({ params }) {
   const [isScrolling, setIsScrolling] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [isHistoryPanelMobile, setIsHistoryPanelMobile] = useState(false);
 
   // Additional UI state
   const [chatZoom, setChatZoom] = useState(1);
   const [messageCopied, setMessageCopied] = useState(null);
   const [notificationSound, setNotificationSound] = useState(true);
   const [lastReadTimestamp, setLastReadTimestamp] = useState(null);
+  // const [showHistoryPanel, setShowHistoryPanel] = useState(false);
 
+  
   // Refs and controls
   const messageInputControls = useAnimation();
   const headerControls = useAnimation();
@@ -277,7 +231,13 @@ export default function TwinoChat({ params }) {
   const inputRef = useRef(null);
   const lastScrollPosition = useRef(0);
 
-  const [isOpen, setIsOpen] = useState(false);
+  // Initialize showHistoryPanel based on initial mobile view
+  const [showHistoryPanel, setShowHistoryPanel] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth >= 768; // true for desktop, false for mobile
+    }
+    return true; // Default to true for SSR or if window is undefined
+  });
 
   // Fetch user credits
   useEffect(() => {
@@ -312,9 +272,9 @@ export default function TwinoChat({ params }) {
     const checkMobileView = () => {
       const isMobile = window.innerWidth < 768;
       setIsHistoryPanelMobile(isMobile);
-      if (isMobile) {
-        setShowHistoryPanel(false);
-      }
+      // Do NOT set setShowHistoryPanel(false) here.
+      // The initial state handles default visibility.
+      // User interaction should control it after initial load.
     };
 
     checkMobileView();
@@ -332,20 +292,11 @@ export default function TwinoChat({ params }) {
 
   // Theme handling
   useEffect(() => {
-    const storedTheme = localStorage?.getItem("theme");
-    const prefersDarkMode = window?.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-
-    if (storedTheme === "dark" || (!storedTheme && prefersDarkMode)) {
-      setDarkMode(true);
-      document.documentElement.classList.add("dark");
-    } else {
-      setDarkMode(false);
-      document.documentElement.classList.remove("dark");
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem("theme", darkMode ? "dark" : "light");
+      document.documentElement.classList.toggle("dark", darkMode);
     }
-    
-  }, []);
+  }, [darkMode]);
 
   // useEffect(()=>{
   //   if (!stop) {
@@ -364,9 +315,9 @@ export default function TwinoChat({ params }) {
   // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
-      timeoutIds.forEach((id) => clearTimeout(id));
+      timeoutIds.current.forEach((id) => clearTimeout(id));
     };
-  }, [timeoutIds]);
+  }, []);
 
   // User authentication handling
   useEffect(() => {
@@ -387,7 +338,7 @@ export default function TwinoChat({ params }) {
 
   // Timeout management helper
   const addTimeout = (id) => {
-    setTimeoutIds((prev) => [...prev, id]);
+    timeoutIds.current.push(id);
     return id;
   };
 
@@ -443,13 +394,22 @@ export default function TwinoChat({ params }) {
           console.error("Error fetching messages:", messagesError);
           toast.error("Failed to load messages");
         } else {
-          setConversation(
-            messagesData.map((msg) => ({
-              sender: msg.sender,
-              message: msg.message,
-              timestamp: msg.created_at,
-            }))
-          );
+          const allMessages = messagesData.map((msg) => ({
+            sender: msg.sender,
+            message: msg.message,
+            timestamp: msg.timestamp,
+          }));
+          conversationHistory.current = allMessages;
+          setVisibleMessages(allMessages.slice(-10));
+          if (allMessages.length > 0) {
+            setStop(true);
+            stopRef.current = true;
+            setIsConversationActive(false);
+          } else {
+            setStop(false);
+            stopRef.current = false;
+            setIsConversationActive(true);
+          }
         }
 
         setTimeout(() => {
@@ -500,7 +460,7 @@ export default function TwinoChat({ params }) {
     if (isAtBottom) {
       setLastReadTimestamp(new Date().toISOString());
     }
-  }, [conversation, thinkingPersona, readingPersona, isScrolling]);
+  }, [visibleMessages, thinkingPersona, readingPersona, isScrolling]);
 
   // Start conversation when data is loaded
   useEffect(() => {
@@ -541,9 +501,12 @@ export default function TwinoChat({ params }) {
       timestamp: new Date().toISOString(),
     };
 
-    setConversation((prev) => [...prev, newMessage]);
+    // Optimistic UI: show message instantly
+    setVisibleMessages((prev) => [...prev, newMessage]);
+    conversationHistory.current.push(newMessage);
 
     // Save message to database
+    let saveError = null;
     try {
       await supabase.from("messages").insert({
         conversation_id: uid,
@@ -552,8 +515,17 @@ export default function TwinoChat({ params }) {
         created_at: new Date().toISOString(),
       });
     } catch (error) {
+      saveError = error;
       console.error("Error saving message:", error);
-      toast.error("Failed to save your message");
+      toast.error("Failed to save your message. Tap to retry.", {
+        duration: 4000,
+        icon: "⚠️",
+      });
+      // Rollback optimistic UI
+      setVisibleMessages((prev) => prev.slice(0, -1));
+      conversationHistory.current.pop();
+      setIsSendingQuestion(false);
+      return;
     }
 
     setCustomQuestion("");
@@ -561,7 +533,7 @@ export default function TwinoChat({ params }) {
     stopRef.current = false;
     setIsConversationActive(true);
 
-    const allMessages = [...conversation, newMessage].map((msg) => ({
+    const allMessages = conversationHistory.current.map((msg) => ({
       sender: msg.sender,
       message: msg.message,
     }));
@@ -595,14 +567,13 @@ export default function TwinoChat({ params }) {
       const message = response.data.message;
 
       if (!stopRef.current) {
-        setConversation((prev) => [
-          ...prev,
-          {
-            sender: askerPersona,
-            message: message.message,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
+        const newMessage = {
+          sender: askerPersona,
+          message: message.message,
+          timestamp: new Date().toISOString(),
+        };
+        setVisibleMessages((prev) => [...prev, newMessage]);
+        conversationHistory.current.push(newMessage);
 
         // Save to database
         try {
@@ -629,7 +600,10 @@ export default function TwinoChat({ params }) {
             setTimeout(() => {
               if (!stopRef.current) {
                 setReadingPersona(null);
-                responder([...previousMessages, message]);
+                responder(conversationHistory.current.map((msg) => ({
+          sender: msg.sender,
+          message: msg.message,
+        })));
               }
             }, delay)
           );
@@ -668,14 +642,13 @@ export default function TwinoChat({ params }) {
       const message = response.data.message;
 
       if (!stopRef.current) {
-        setConversation((prev) => [
-          ...prev,
-          {
-            sender: responderPersona,
-            message: message.message,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
+        const newMessage = {
+          sender: responderPersona,
+          message: message.message,
+          timestamp: new Date().toISOString(),
+        };
+        setVisibleMessages((prev) => [...prev, newMessage]);
+        conversationHistory.current.push(newMessage);
 
         // Save to database
         try {
@@ -702,7 +675,10 @@ export default function TwinoChat({ params }) {
             setTimeout(() => {
               if (!stopRef.current) {
                 setReadingPersona(null);
-                asker([...previousMessages, message]);
+                asker(conversationHistory.current.map((msg) => ({
+          sender: msg.sender,
+          message: msg.message,
+        })));
               }
             }, delay)
           );
@@ -776,8 +752,8 @@ export default function TwinoChat({ params }) {
     setReadingPersona(null);
 
     // Clear all timeouts
-    timeoutIds.forEach((id) => clearTimeout(id));
-    setTimeoutIds([]);
+    timeoutIds.current.forEach((id) => clearTimeout(id));
+    timeoutIds.current = [];
 
     // toast.success("Conversation paused");
   };
@@ -945,13 +921,14 @@ export default function TwinoChat({ params }) {
 
   return (
     <motion.div
-      className="flex mt-15 h-screen font-sans transition-colors duration-300"
+      className="flex h-screen font-sans transition-colors duration-300"
       style={{ backgroundColor: theme.bg, color: theme.text }}
       variants={pageVariants}
       initial="initial"
       animate="animate"
       exit="exit"
     >
+      <LagIndicator />
      
       <Toaster position="bottom-right" />
 
@@ -959,11 +936,18 @@ export default function TwinoChat({ params }) {
 
       
 
-      {/* History Sidebar */}
       <div
         className={`${
-          isHistoryPanelMobile ? "fixed top-0 left-0 h-full z-15" : "relative"
-        } md:relative max-sm:hidden md:z-auto`}
+          isHistoryPanelMobile
+            ? showHistoryPanel
+              ? "block" // Show the div when sidebar should be open on mobile
+              : "hidden" // Hide the div when sidebar should be closed on mobile
+            : "block md:w-80" // Always block on desktop, and set width
+        }`}
+        style={{
+          // No positioning/sizing here, let HistorySidebar handle it
+          background: darkMode ? colors.darkMode.surface : "#fff",
+        }}
       >
         <HistorySidebar
           user={user}
@@ -971,23 +955,75 @@ export default function TwinoChat({ params }) {
           onToggle={setShowHistoryPanel}
           theme={theme}
           darkMode={darkMode}
+          pageSize={10}
+          overlay={isHistoryPanelMobile}
         />
       </div>
 
       {/* Main Chat Content */}
-      <div className="flex-1 flex dark:bg-slate-800  flex-col h-full overflow-hidden">
+      <div
+        className="flex-1 flex flex-col h-full overflow-hidden"
+        style={{
+          background: darkMode ? colors.darkMode.bg : colors.lightMode.bg,
+        }}
+      >
         {/* Enhanced Header */}
         <motion.div
-          className="flex-shrink-0 flex items-center  dark:bg-slate-800  justify-between p-4 border-b backdrop-blur-lg z-10"
+          className="flex-shrink-0 flex items-center justify-between p-4 border-b z-10"
           style={{
             borderColor: theme.border,
-            backdropFilter: "blur(8px)",
+            background: darkMode ? colors.darkMode.surface : colors.lightMode.surface,
+            boxShadow: darkMode
+              ? "0 2px 8px rgba(0,0,0,0.12)"
+              : "0 2px 8px rgba(60,60,120,0.06)",
           }}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
           <div className="flex items-center space-x-4">
+            {/* Burger menu button for small devices */}
+            {isHistoryPanelMobile && (
+              <button
+                className="p-2 rounded-full"
+                style={{
+                  color: darkMode ? colors.darkMode.text : "#333",
+                }}
+                aria-label="Open history sidebar"
+                onClick={() => setShowHistoryPanel(true)}
+              >
+                {/* Simple burger icon */}
+                <span
+                  style={{
+                    display: "block",
+                    width: "24px",
+                    height: "2px",
+                    background: "currentColor",
+                    marginBottom: "5px",
+                    borderRadius: "2px",
+                  }}
+                />
+                <span
+                  style={{
+                    display: "block",
+                    width: "24px",
+                    height: "2px",
+                    background: "currentColor",
+                    marginBottom: "5px",
+                    borderRadius: "2px",
+                  }}
+                />
+                <span
+                  style={{
+                    display: "block",
+                    width: "24px",
+                    height: "2px",
+                    background: "currentColor",
+                    borderRadius: "2px",
+                  }}
+                />
+              </button>
+            )}
             {/* Conversation Info */}
             <div className="flexflex-col">
               <h1 className="font-bold  dark:text-slate-200  font-ubuntu first-letter:uppercase text-lg sm:text-xl truncate max-w-xs sm:max-w-md lg:max-w-lg">
@@ -1120,6 +1156,46 @@ export default function TwinoChat({ params }) {
                 : "#D1D5DB transparent",
             }}
             onScroll={handleScroll}
+            tabIndex={0}
+            onKeyDown={async (e) => {
+              if (
+                (e.key === "PageUp" || (e.key === "ArrowUp" && e.shiftKey)) &&
+                conversationHistory.current.length > visibleMessages.length &&
+                !isConversationLoadingOlder &&
+                visibleMessages.length < conversationHistory.current.length
+              ) {
+                setIsConversationLoadingOlder(true);
+                const currentLen = visibleMessages.length;
+                const startIdx = Math.max(0, conversationHistory.current.length - currentLen - 20);
+                const endIdx = conversationHistory.current.length - currentLen - 1;
+                try {
+                  const { data: olderMessages, error } = await supabase
+                    .from("messages")
+                    .select("*")
+                    .eq("conversation_id", uid)
+                    .order("id", { ascending: true })
+                    .range(startIdx, endIdx);
+
+                  if (error) {
+                    toast.error("Failed to load older messages");
+                    setIsConversationLoadingOlder(false);
+                    return;
+                  }
+                  const more = olderMessages.map((msg) => ({
+                    sender: msg.sender,
+                    message: msg.message,
+                    timestamp: msg.id,
+                  }));
+                  setVisibleMessages([
+                    ...more,
+                    ...visibleMessages,
+                  ]);
+                } catch (err) {
+                  toast.error("Error loading older messages");
+                }
+                setIsConversationLoadingOlder(false);
+              }
+            }}
           >
             {/* Loading Skeleton */}
             {isConversationLoading ? (
@@ -1131,7 +1207,68 @@ export default function TwinoChat({ params }) {
             ) : (
               /* Messages */
               <div className="space-y-4">
-                {conversation.map((message, index) => {
+                {conversationHistory.current.length > visibleMessages.length && visibleMessages.length < conversationHistory.current.length && (
+                  <>
+                    {isConversationLoadingOlder ? (
+                      <div className="mb-4 px-4 py-2 rounded-lg font-medium text-center" style={{
+                        backgroundColor: darkMode
+                          ? colors.darkMode.buttonBg
+                          : colors.lightMode.buttonBg,
+                        color: "#fff",
+                      }}>
+                        Loading older messages...
+                      </div>
+                    ) : (
+                      <button
+                        className="mb-4 px-4 py-2 rounded-lg font-medium"
+                        style={{
+                          backgroundColor: darkMode
+                            ? colors.darkMode.buttonBg
+                            : colors.lightMode.buttonBg,
+                          color: "#fff",
+                        }}
+                        disabled={visibleMessages.length >= conversationHistory.current.length}
+                        onClick={async () => {
+                          setIsConversationLoadingOlder(true);
+                          const currentLen = visibleMessages.length;
+                          const startIdx = Math.max(0, conversationHistory.current.length - currentLen - 20);
+                          const endIdx = conversationHistory.current.length - currentLen - 1;
+                          try {
+                            const { data: olderMessages, error } = await supabase
+                              .from("messages")
+                              .select("*")
+                              .eq("conversation_id", uid)
+                              .order("id", { ascending: true })
+                              .range(startIdx, endIdx);
+
+                            if (error) {
+                              toast.error("Failed to load older messages");
+                              setIsConversationLoadingOlder(false);
+                              return;
+                            }
+                          const more = olderMessages.map((msg) => ({
+                              sender: msg.sender,
+                              message: msg.message,
+                              timestamp: msg.timestamp,
+                            }));
+                          setVisibleMessages([
+                              ...more,
+                              ...visibleMessages,
+                            ]);
+                          } catch (err) {
+                            toast.error("Error loading older messages");
+                          }
+                          setIsConversationLoadingOlder(false);
+                        }}
+                      >
+                        {visibleMessages.length >= conversationHistory.current.length
+                          ? "All messages loaded"
+                          : "Load older messages"}
+                      </button>
+                    )}
+                  </>
+                )}
+                {visibleMessages.map((message, index) => {
                   const isAsker =
                     message.sender ===
                     data?.personalities?.personality_pair.split(" × ")[0];
@@ -1140,180 +1277,20 @@ export default function TwinoChat({ params }) {
                   );
 
                   return (
-                    <motion.div
+                    <Message
                       key={index}
-                      className={`flex ${
-                        isAsker ? "justify-start" : "justify-end"
-                      }`}
-                      variants={messageVariants}
-                      initial="hidden"
-                      animate="visible"
-                      transition={{
-                        duration: 0.3,
-                        delay: Math.min(index * 0.05, 0.3),
-                      }}
-                      onMouseEnter={() =>
-                        setMessageActions({ visible: true, index })
-                      }
-                      onMouseLeave={() =>
-                        setMessageActions({ visible: false, index: null })
-                      }
-                    >
-                      <div
-                        className={`
-                        max-w-[90%] sm:max-w-[75%] md:max-w-[65%] lg:max-w-[55%] 
-                        ${isAsker ? "mr-auto" : "ml-auto"} 
-                        relative group
-                      `}
-                      >
-                        {/* Message Header */}
-                        <div className="flex items-center space-x-2 mb-2">
-                          <span className="font-semibold  dark:text-slate-200 text-sm">
-                            {message.sender}
-                          </span>
-                          <span
-                            className="text-xs opacity-70"
-                            style={{ color: theme.subText }}
-                          >
-                            {new Date(message.timestamp).toLocaleTimeString(
-                              [],
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
-                            )}
-                          </span>
-                          {isPinned && (
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              className="flex items-center justify-center"
-                            >
-                              <Bookmark
-                                size={12}
-                                style={{
-                                  color: darkMode ? "#D0C4FF" : "#4C4CFF",
-                                  fill: "currentColor",
-                                }}
-                              />
-                            </motion.div>
-                          )}
-                        </div>
-
-                        {/* Message Content */}
-                        <GlassEffect
-                          darkMode={darkMode}
-                          active={true}
-                          isAsker={isAsker}
-                          isResponder={!isAsker}
-                        >
-                          <div
-                            className="p-4 rounded-xl whitespace-pre-wrap leading-relaxed  dark:text-slate-200 "
-                            style={{
-                              back: darkMode
-                                ? isAsker
-                                  ? "#FFFFFF"
-                                  : "#FFFFFF"
-                                : isAsker
-                                ? "#2A324B"
-                                : "#2A324B",
-                            }}
-                          >
-                            
-                            {message.message.startsWith('https://image.pollinations.ai') ? (
-                              <img loading="lazy" src={message.message} alt="Generated Image" className="rounded-lg" />
-                            ) : (
-                              <span>{message.message}</span>
-                            )}
-
-                            {/* Copy Confirmation */}
-                            <AnimatePresence>
-                              {messageCopied === message.message && (
-                                <motion.div
-                                  initial={{ opacity: 0, scale: 0.8 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  exit={{ opacity: 0, scale: 0.8 }}
-                                  className="text-xs mt-3 flex items-center justify-center py-1 px-2 rounded-full"
-                                  style={{
-                                    color: darkMode ? "#D0C4FF" : "#4C4CFF",
-                                    backgroundColor: darkMode
-                                      ? "rgba(208, 196, 255, 0.1)"
-                                      : "rgba(76, 76, 255, 0.1)",
-                                  }}
-                                >
-                                  <CheckCircle size={12} className="mr-1" />
-                                  Copied!
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        </GlassEffect>
-
-                        {/* Message Actions */}
-                        <AnimatePresence>
-                          {messageActions.visible &&
-                            messageActions.index === index && (
-                              <motion.div
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 5 }}
-                                className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 flex items-center space-x-1"
-                              >
-                                <div
-                                  className="flex items-center space-x-1 p-1 rounded-lg backdrop-blur-md shadow-lg border"
-                                  style={{
-                                    backgroundColor: darkMode
-                                      ? "rgba(42, 50, 75, 0.9)"
-                                      : "rgba(255, 255, 255, 0.9)",
-                                    borderColor: darkMode
-                                      ? "rgba(255, 255, 255, 0.1)"
-                                      : "rgba(0, 0, 0, 0.1)",
-                                  }}
-                                >
-                                  <motion.button
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    className="p-2 rounded-md transition-colors duration-200 hover:bg-opacity-10"
-                                    onClick={() =>
-                                      copyMessageToClipboard(message.message)
-                                    }
-                                    title="Copy message"
-                                    style={{
-                                      backgroundColor: "transparent",
-                                      color: darkMode ? "#D0C4FF" : "#4C4CFF",
-                                    }}
-                                  >
-                                    <Copy size={14} />
-                                  </motion.button>
-
-                                  <motion.button
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    className="p-2 rounded-md transition-colors duration-200 hover:bg-opacity-10"
-                                    onClick={() => togglePinMessage(index)}
-                                    title={
-                                      isPinned ? "Unpin message" : "Pin message"
-                                    }
-                                    style={{
-                                      backgroundColor: "transparent",
-                                      color: darkMode ? "#D0C4FF" : "#4C4CFF",
-                                    }}
-                                  >
-                                    <Bookmark
-                                      size={14}
-                                      style={{
-                                        fill: isPinned
-                                          ? "currentColor"
-                                          : "none",
-                                      }}
-                                    />
-                                  </motion.button>
-                                </div>
-                              </motion.div>
-                            )}
-                        </AnimatePresence>
-                      </div>
-                    </motion.div>
+                      message={message}
+                      index={index}
+                      isAsker={isAsker}
+                      isPinned={isPinned}
+                      darkMode={darkMode}
+                      theme={theme}
+                      messageActions={messageActions}
+                      setMessageActions={setMessageActions}
+                      copyMessageToClipboard={copyMessageToClipboard}
+                      togglePinMessage={togglePinMessage}
+                      messageCopied={messageCopied}
+                    />
                   );
                 })}
               </div>
@@ -1376,6 +1353,21 @@ export default function TwinoChat({ params }) {
             </AnimatePresence>
 
             <div ref={messageEndRef} />
+            {/* Accessibility: ARIA live region for new messages */}
+            <div
+              aria-live="polite"
+              style={{
+                position: "absolute",
+                left: "-9999px",
+                width: "1px",
+                height: "1px",
+                overflow: "hidden",
+              }}
+            >
+              {visibleMessages.length > 0
+                ? visibleMessages[visibleMessages.length - 1].message
+                : ""}
+            </div>
           </div>
 
           {/* Floating Action Buttons */}
@@ -1421,8 +1413,14 @@ export default function TwinoChat({ params }) {
           {/* Message Input Area */}
           {isConversationOwner ? (
             <motion.div
-              className="flex-shrink-0 max-sm:fixed bottom-0 w-full  p-4 z-10 border-t backdrop-blur-sm"
-              style={{ borderColor: theme.border }}
+              className="flex-shrink-0 max-sm:fixed bottom-0 w-full p-4 z-10 border-t"
+              style={{
+                borderColor: theme.border,
+                background: darkMode ? colors.darkMode.surfaceAlt : colors.lightMode.surfaceAlt,
+                boxShadow: darkMode
+                  ? "0 -2px 8px rgba(0,0,0,0.10)"
+                  : "0 -2px 8px rgba(60,60,120,0.04)",
+              }}
               animate={messageInputControls}
               initial={{ opacity: 1 }}
             >
@@ -1439,21 +1437,23 @@ export default function TwinoChat({ params }) {
                           : "Type your message..."
                       }
                       value={customQuestion}
-                      onChange={(e) => {!stop && handleStop();setCustomQuestion(e.target.value)}}
+                      onChange={(e) => setCustomQuestion(e.target.value)}
                       disabled={
                         isSendingQuestion ||
                         thinkingPersona ||
                         readingPersona ||
                         !isConversationOwner
                       }
-                      className="w-full z-50 py-3 px-4 pr-20 rounded-xl transition-all duration-200 border-2 focus:outline-none focus:ring-2 focus:ring-opacity-50 resize-none"
+                      className="w-full z-50 py-3 px-4 pr-20 rounded-xl transition-all duration-200 border focus:outline-none focus:ring-2 focus:ring-opacity-50 resize-none"
                       style={{
                         backgroundColor: darkMode
-                          ? "rgba(53, 59, 84, 0.8)"
-                          : "rgba(248, 250, 252, 0.8)",
-                        borderColor: darkMode ? "#404969" : "#E2E8F0",
+                          ? colors.darkMode.surface
+                          : colors.lightMode.surface,
+                        borderColor: darkMode ? colors.darkMode.border : colors.lightMode.border,
                         color: theme.text,
-                        boxShadow: "inset 0 1px 3px rgba(0, 0, 0, 0.1)",
+                        boxShadow: darkMode
+                          ? "inset 0 1px 3px rgba(0,0,0,0.18)"
+                          : "inset 0 1px 3px rgba(0,0,0,0.08)",
                       }}
                       onFocus={() => {
                         if (chatContainerRef.current) {
@@ -1479,12 +1479,12 @@ export default function TwinoChat({ params }) {
                         className="p-2 rounded-lg transition-colors duration-200"
                         style={{
                           color: isRecording
-                            ? "#EF4444"
+                            ? colors.darkMode.errorBg
                             : darkMode
-                            ? "#D0C4FF"
-                            : "#4C4CFF",
+                            ? colors.darkMode.accent
+                            : colors.lightMode.accent,
                           backgroundColor: isRecording
-                            ? "rgba(239, 68, 68, 0.1)"
+                            ? colors.darkMode.errorBg + "22"
                             : "transparent",
                         }}
                         title="Voice input"
@@ -1504,13 +1504,15 @@ export default function TwinoChat({ params }) {
                         }
                         className="p-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{
-                          color: "#FFFFFF",
+                          color: "#fff",
                           backgroundColor:
                             !isSendingQuestion && customQuestion.trim()
                               ? darkMode
-                                ? "#4C4CFF"
-                                : "#5C5CFF"
-                              : "rgba(156, 163, 175, 0.5)",
+                                ? colors.darkMode.buttonBg
+                                : colors.lightMode.buttonBg
+                              : darkMode
+                                ? colors.darkMode.border
+                                : colors.lightMode.border,
                         }}
                         title="Send message"
                       >

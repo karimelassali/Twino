@@ -5,19 +5,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 
-const HistorySidebar = ({ user, navLinks }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const HistorySidebar = ({
+  user,
+  isOpen,
+  onToggle,
+  overlay = false,
+  pageSize = 10,
+}) => {
   const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const supabase = createClient();
-
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-  };
-
-  const closeSidebar = () => {
-    setIsOpen(false);
-  };
 
   useEffect(() => {
     const fetchUserConversations = async () => {
@@ -31,12 +30,14 @@ const HistorySidebar = ({ user, navLinks }) => {
           .from("conversations")
           .select("*, personalities(personality_pair)")
           .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
+          .order("created_at", { ascending: false })
+          .range(page * pageSize, page * pageSize + pageSize - 1);
 
         if (error) {
           console.error("Error fetching conversations:", error);
         } else {
-          setHistory(conversationsData || []);
+          setHistory((prev) => [...prev, ...(conversationsData || [])]);
+          setHasMore(conversationsData && conversationsData.length === pageSize);
         }
       } catch (error) {
         console.error("Error in fetchUserConversations:", error);
@@ -46,7 +47,7 @@ const HistorySidebar = ({ user, navLinks }) => {
     };
 
     fetchUserConversations();
-  }, [user?.id, supabase]);
+  }, [user?.id, supabase, page, pageSize]);
 
   // Close sidebar on escape key
   useEffect(() => {
@@ -62,48 +63,21 @@ const HistorySidebar = ({ user, navLinks }) => {
 
   return (
     <>
-      {/* Mobile Menu Button - z-index is now higher than the navbar */}
-      <button
-        onClick={toggleSidebar}
-        className="fixed top-4 left-4 z-[60] md:hidden max-md:hidden p-2 rounded-lg bg-gray-800 text-white shadow-lg hover:bg-gray-700 transition-colors duration-200"
-        aria-label={isOpen ? "Close menu" : "Open menu"}
-      >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          {isOpen ? (
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          ) : (
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          )}
-        </svg>
-      </button>
+      {/* Mobile Menu Button removed; handled by parent */}
 
       {/* Sidebar - z-index is now higher to appear over content */}
       <aside
-        className={`fixed top-0 left-0 h-full w-80 border-r dark:bg-gray-900 text-white transform ${
+        className={`fixed top-0 left-0 h-full w-80 border-r text-white transform ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } transition-transform ease-in-out duration-300 md:translate-x-0 md:static md:h-screen md:w-80 md:flex-shrink-0 z-10 flex flex-col`}
+        style={overlay ? { zIndex: 60 } : {}}
       >
         {/* Header Section */}
         <div className="flex-shrink-0 p-6 border-b border-gray-700">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-slate-800  dark:text-white">Last Conversations</h2>
             <button
-              onClick={closeSidebar}
+              onClick={onToggle}
               className="md:hidden p-1 rounded-md hover:bg-gray-700 transition-colors duration-200"
               aria-label="Close sidebar"
             >
@@ -142,7 +116,7 @@ const HistorySidebar = ({ user, navLinks }) => {
                   <li key={conversation.id}>
                     <Link
                       href={`/chat/${conversation.id}`}
-                      onClick={closeSidebar}
+                      onClick={onToggle}
                       className="group block p-3 rounded-lg text-sm text-gray-300 hover:bg-violet-300 dark:hover:bg-gray-700 hover:text-white transition-all duration-200 border border-transparent hover:border-gray-600"
                     >
                       <div className="flex flex-col space-y-1">
@@ -163,6 +137,15 @@ const HistorySidebar = ({ user, navLinks }) => {
                     </Link>
                   </li>
                 ))}
+                {/* Load More Button */}
+                {hasMore && !isLoading && (
+                  <button
+                    className="w-full mt-4 py-2 rounded-lg bg-violet-500 text-white font-medium hover:bg-violet-600 transition"
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Load More
+                  </button>
+                )}
               </ul>
             ) : (
               <div className="text-center py-8 text-gray-500">
@@ -238,10 +221,11 @@ const HistorySidebar = ({ user, navLinks }) => {
       </aside>
 
       {/* Overlay for mobile - z-index is now just below the sidebar */}
-      {isOpen && (
+      {isOpen && overlay && (
         <div
-          onClick={closeSidebar}
-          className="fixed inset-0 bg-red-300  md:hidden backdrop-blur-sm"
+          onClick={onToggle}
+          className="fixed inset-0 bg-black bg-opacity-40 md:hidden backdrop-blur-sm"
+          style={{ zIndex: 59 }}
         />
       )}
     </>
